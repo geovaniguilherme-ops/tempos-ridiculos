@@ -340,8 +340,53 @@
 <script>
 let currentFilter=null, uploadedImages=[];
 
-function getPosts(){try{return JSON.parse(localStorage.getItem('tr_posts')||'[]');}catch(e){return[];}}
-function savePosts(p){localStorage.setItem('tr_posts',JSON.stringify(p));}
+let _postsCache=null;
+const GH_OWNER='geovaniguilherme-ops', GH_REPO='tempos-ridiculos', GH_PATH='data/posts.json';
+function getPosts(){
+  if(_postsCache!==null)return _postsCache;
+  try{return JSON.parse(localStorage.getItem('tr_posts')||'[]');}catch(e){return[];}
+}
+async function fetchRemotePosts(){
+  try{
+    const r=await fetch('data/posts.json?t='+Date.now(),{cache:'no-store'});
+    if(r.ok){_postsCache=await r.json();localStorage.setItem('tr_posts',JSON.stringify(_postsCache));return;}
+  }catch(e){}
+  try{_postsCache=JSON.parse(localStorage.getItem('tr_posts')||'[]');}catch(e){_postsCache=[];}
+}
+function getGhToken(){
+  let t=localStorage.getItem('tr_gh_token');
+  if(!t){
+    t=prompt('Cole seu token do GitHub pra publicar de verdade (só precisa fazer isso uma vez neste navegador):');
+    if(t)localStorage.setItem('tr_gh_token',t.trim());
+  }
+  return t?t.trim():null;
+}
+async function publishToGitHub(posts){
+  const token=getGhToken();
+  if(!token){alert('Sem token salvo — este post ficou só salvo neste navegador, não foi publicado de verdade.');return;}
+  try{
+    const api=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
+    let sha=null;
+    const head=await fetch(api,{headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json'}});
+    if(head.ok){const j=await head.json();sha=j.sha;}
+    else if(head.status===401||head.status===403){
+      alert('Token do GitHub inválido ou expirado. Vou pedir um novo.');
+      localStorage.removeItem('tr_gh_token');
+      return publishToGitHub(posts);
+    }
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(posts,null,2))));
+    const body={message:'Atualiza posts via painel admin',content};
+    if(sha)body.sha=sha;
+    const put=await fetch(api,{method:'PUT',headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!put.ok){
+      const err=await put.json().catch(()=>({}));
+      alert('Não consegui publicar de verdade no GitHub ('+(err.message||put.status)+'). O post ficou salvo só neste navegador por enquanto.');
+    }
+  }catch(e){
+    alert('Erro de conexão ao publicar no GitHub. O post ficou salvo só neste navegador por enquanto.');
+  }
+}
+function savePosts(p){_postsCache=p;localStorage.setItem('tr_posts',JSON.stringify(p));publishToGitHub(p);}
 function getComments(id){try{return JSON.parse(localStorage.getItem('tr_cmts_'+id)||'[]');}catch(e){return[];}}
 function saveComments(id,c){localStorage.setItem('tr_cmts_'+id,JSON.stringify(c));}
 
@@ -613,8 +658,6 @@ document.querySelector('.btn-dark').textContent=savedTheme==='dark'?'☀️':'�
 
 document.getElementById('current-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-renderHome();
-
 function checkAdminHash(){
   if(window.location.hash==='#admin-benedito'){
     showPage('admin');
@@ -622,8 +665,13 @@ function checkAdminHash(){
     showPage('home');
   }
 }
-if(window.location.hash==='#admin-benedito'){showPage('admin');}
 window.addEventListener('hashchange',checkAdminHash);
+
+(async function boot(){
+  await fetchRemotePosts();
+  renderHome();
+  if(window.location.hash==='#admin-benedito'){showPage('admin');}
+})();
 
 // Contador de visitas GoatCounter
 fetch('https://temposridiculos.goatcounter.com/counter//.json')
