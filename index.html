@@ -309,6 +309,7 @@ function getPosts(){
   if(_postsCache!==null)return _postsCache;
   try{return JSON.parse(localStorage.getItem('tr_posts')||'[]');}catch(e){return[];}
 }
+function getPublicPosts(){return getPosts().filter(p=>!p.archived);}
 async function fetchRemotePosts(){
   try{
     const r=await fetch('data/posts.json?t='+Date.now(),{cache:'no-store'});
@@ -423,7 +424,7 @@ function filterCategory(cat,el){setActive(el);currentFilter=cat;showPage('home')
 function searchPosts(){currentFilter=null;renderHome();}
 
 function renderHome(){
-  let posts=getPosts();
+  let posts=getPublicPosts();
   if(currentFilter)posts=posts.filter(p=>p.category===currentFilter);
   const q=(document.getElementById('search-input').value||'').toLowerCase();
   if(q)posts=posts.filter(p=>(p.title+p.body+p.summary).toLowerCase().includes(q));
@@ -473,7 +474,7 @@ function renderHome(){
 }
 
 function renderSidebar(){
-  const posts=getPosts(),cats={};
+  const posts=getPublicPosts(),cats={};
   posts.forEach(p=>{cats[p.category]=(cats[p.category]||0)+1;});
   const catHtml=Object.entries(cats).map(([c,n])=>
     `<li><a onclick="filterCategory('${c}',this)">${c} <span class="cat-count">${n}</span></a></li>`
@@ -944,7 +945,7 @@ async function updateSitemap(){
   const token=getGhToken();
   if(!token)return false;
   try{
-    const xml=buildSitemapXml(getPosts());
+    const xml=buildSitemapXml(getPublicPosts());
     const path='sitemap.xml';
     const api=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`;
     let sha=null;
@@ -1038,13 +1039,23 @@ function renderAdmin(){
   const posts=getPosts(),list=document.getElementById('admin-posts-list');
   if(!list)return;
   if(posts.length===0){list.innerHTML='<div style="padding:2rem;text-align:center;color:var(--gray);font-style:italic">Nenhum post publicado ainda.</div>';return;}
-  list.innerHTML=posts.map(p=>`<div class="admin-post-item">
+  list.innerHTML=posts.map(p=>`<div class="admin-post-item${p.archived?' admin-post-archived':''}">
     <div class="admin-post-info">
-      <h4>${p.title}</h4>
+      <h4>${p.title}${p.archived?' <span class="archived-badge">📦 Arquivado</span>':''}</h4>
       <span>${p.category} · ${fmtDate(p.date)} · ${(p.images||[]).length} imagem(ns)</span>
     </div>
-    <div class="admin-post-actions"><button class="btn-edit" onclick="editPost('${p.id}')">Editar</button><button class="btn-danger" onclick="deletePost('${p.id}')">Excluir</button></div>
+    <div class="admin-post-actions"><button class="btn-edit" onclick="editPost('${p.id}')">Editar</button><button class="btn-edit" onclick="toggleArchive('${p.id}')">${p.archived?'📤 Desarquivar':'📦 Arquivar'}</button><button class="btn-danger" onclick="deletePost('${p.id}')">Excluir</button></div>
   </div>`).join('');
+}
+async function toggleArchive(id){
+  const posts=getPosts();
+  const idx=posts.findIndex(p=>p.id===id);
+  if(idx===-1)return;
+  posts[idx]={...posts[idx],archived:!posts[idx].archived};
+  const ok=await savePosts(posts);
+  if(ok)await updateSitemap();
+  else alert('Não consegui salvar a mudança. Tente de novo.');
+  renderAdmin();
 }
 
 async function deletePost(id){
