@@ -1119,7 +1119,7 @@ async function updatePost(id){
   const posts=getPosts();
   const idx=posts.findIndex(p=>p.id===id);
   if(idx===-1)return;
-  posts[idx]={...posts[idx],title,category:document.getElementById('post-category').value,summary:document.getElementById('post-summary').value.trim(),body,video:document.getElementById('post-video').value.trim(),images:uploadedImages.filter(Boolean),poll:getPollFromForm(),coverImage:selectedCoverImage};
+  posts[idx]={...posts[idx],title,category:document.getElementById('post-category').value,summary:document.getElementById('post-summary').value.trim(),body,video:document.getElementById('post-video').value.trim(),images:uploadedImages.filter(Boolean),poll:getPollFromForm(),coverImage:selectedCoverImage,archived:false};
   isPublishing=true;
   const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
   btn.disabled=true;btn.style.opacity='.6';
