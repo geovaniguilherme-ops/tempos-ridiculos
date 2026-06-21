@@ -726,7 +726,7 @@ window.addEventListener('hashchange',checkAdminHash);
 })();
 
 // Contador de visitas GoatCounter
-fetch('https://temposridiculos.goatcounter.com/counter//.json')
+fetch('https://temposridiculos.goatcounter.com/counter/'+encodeURIComponent(window.location.pathname)+'.json')
   .then(r=>r.json())
   .then(d=>{
     const el=document.getElementById('visit-count');
