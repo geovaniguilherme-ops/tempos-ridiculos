@@ -181,7 +181,10 @@ function updateReadingProgress(){
 }
 window.addEventListener('scroll',updateReadingProgress);
 updateReadingProgress();
-fetch('https://abacus.jasoncameron.dev/hit/tempos-ridiculos.com/views-p1782004948886').catch(()=>{});
+(function(){
+  const isOwnerVisit=(()=>{try{return localStorage.getItem('tr_owner')==='1';}catch(e){return false;}})();
+  fetch(`https://abacus.jasoncameron.dev/${isOwnerVisit?'get':'hit'}/tempos-ridiculos.com/views2-p1782004948886`).catch(()=>{});
+})();
 </script>
 </body>
 </html>
