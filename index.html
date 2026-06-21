@@ -498,7 +498,7 @@ function renderMostRead(posts){
   if(!list)return;
   const ns='tempos-ridiculos.com';
   Promise.all(posts.map(p=>
-    fetch('https://abacus.jasoncameron.dev/get/'+ns+'/views-'+p.id).then(r=>r.ok?r.json():{value:0}).catch(()=>({value:0})).then(d=>({post:p,views:d.value||0}))
+    fetch('https://abacus.jasoncameron.dev/get/'+ns+'/views2-'+p.id).then(r=>r.ok?r.json():{value:0}).catch(()=>({value:0})).then(d=>({post:p,views:d.value||0}))
   )).then(results=>{
     const top=results.filter(r=>r.views>0).sort((a,b)=>b.views-a.views).slice(0,5);
     if(!top.length){list.innerHTML='<li style="padding:.5rem 0;font-size:.8rem;color:var(--gray)">Ainda sem leituras suficientes</li>';return;}
@@ -903,7 +903,7 @@ window.addEventListener('scroll',updateReadingProgress);
 updateReadingProgress();
 (function(){
   const isOwnerVisit=(()=>{try{return localStorage.getItem('tr_owner')==='1';}catch(e){return false;}})();
-  fetch(\`https://abacus.jasoncameron.dev/\${isOwnerVisit?'get':'hit'}/tempos-ridiculos.com/views-${post.id}\`).catch(()=>{});
+  fetch(\`https://abacus.jasoncameron.dev/\${isOwnerVisit?'get':'hit'}/tempos-ridiculos.com/views2-${post.id}\`).catch(()=>{});
 })();
 <\/script>
 </body>
@@ -1192,7 +1192,7 @@ window.addEventListener('hashchange',checkAdminHash);
 
 // Contador de visitas (serviço gratuito, sem necessidade de configuração)
 const isOwnerVisit=(()=>{try{return localStorage.getItem('tr_owner')==='1';}catch(e){return false;}})();
-fetch(`https://abacus.jasoncameron.dev/${isOwnerVisit?'get':'hit'}/tempos-ridiculos.com/homepage`)
+fetch(`https://abacus.jasoncameron.dev/${isOwnerVisit?'get':'hit'}/tempos-ridiculos.com/homepage2`)
   .then(r=>r.json())
   .then(d=>{
     const el=document.getElementById('visit-count');
