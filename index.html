@@ -580,7 +580,13 @@ async function resolvePendingQuillImages(){
     const uploaded=results[i];
     const target=quillEditor&&quillEditor.root.querySelector(`img[data-uploading="${id}"]`);
     if(target&&uploaded){
-      target.src=`${SITE_URL}/${uploaded}`;
+      const finalUrl=`${SITE_URL}/${uploaded}`;
+      if(selectedCoverImage===target.src){
+        selectedCoverImage=finalUrl;
+        const preview=document.getElementById('cover-preview-img');
+        if(preview)preview.src=finalUrl;
+      }
+      target.src=finalUrl;
       target.removeAttribute('data-uploading');
     } else {
       failures++;
@@ -601,10 +607,7 @@ function scanAvailableImages(){
   }
   return imgs;
 }
-async function openCoverPicker(btn){
-  if(btn){btn.disabled=true;btn.textContent='⏳ Verificando imagens...';}
-  await resolvePendingQuillImages();
-  if(btn){btn.disabled=false;btn.textContent='🖼 Escolher imagem de capa';}
+function openCoverPicker(btn){
   const imgs=scanAvailableImages();
   const modal=document.getElementById('cover-picker-modal');
   if(!imgs.length){
