@@ -81,7 +81,16 @@
     "images": [
       "images/p1782004735877-0.jpg"
     ],
-    "date": "2026-06-21T01:18:55.877Z"
+    "date": "2026-06-21T01:18:55.877Z",
+    "poll": {
+      "question": "De que lado você se identifica?",
+      "options": [
+        "Direita",
+        "Esquerda",
+        "Centro",
+        "Sou ateu em política"
+      ]
+    }
   },
   {
     "id": "p1782004515110",
