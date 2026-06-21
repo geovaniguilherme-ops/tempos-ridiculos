@@ -117,6 +117,16 @@
           <textarea id="post-video" style="min-height:80px;resize:vertical" placeholder="https://youtube.com/watch?v=...&#10;https://youtube.com/watch?v=..."></textarea>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Pergunta da enquete (opcional)</label>
+          <input type="text" id="post-poll-question" placeholder="Ex: Você confia no sistema partidário?">
+        </div>
+        <div class="form-group">
+          <label>Opções da enquete (uma por linha, deixe em branco se não quiser enquete)</label>
+          <textarea id="post-poll-options" style="min-height:80px;resize:vertical" placeholder="Sim&#10;Não&#10;Mais ou menos"></textarea>
+        </div>
+      </div>
       <div class="form-group">
         <label>Imagens — selecione quantas quiser</label>
         <div class="images-upload-area" onclick="document.getElementById('imgs-input').click()">
@@ -422,6 +432,13 @@ function addComment(postId){
 function formatBody(text){return text.split('\n\n').filter(p=>p.trim()).map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('');}
 
 const SITE_URL='https://geovaniguilherme-ops.github.io/tempos-ridiculos';
+const POLL_NS='tempos-ridiculos.com';
+function getPollFromForm(){
+  const q=document.getElementById('post-poll-question').value.trim();
+  const opts=document.getElementById('post-poll-options').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!q||opts.length<2)return null;
+  return{question:q,options:opts};
+}
 function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function buildPostPageHtml(post){
   const pageUrl=`${SITE_URL}/posts/${post.id}.html`;
@@ -436,6 +453,50 @@ function buildPostPageHtml(post){
     }).join('');
   }
   const imgsHtml=imgs.map(s=>`<img src="${s}" class="post-full-image" alt="${escAttr(post.title)}">`).join('');
+  let pollHtml='';
+  if(post.poll){
+    const pollJson=JSON.stringify(post.poll).replace(/<\/script/gi,'<\\/script');
+    pollHtml=`<div class="poll-widget">
+    <div class="poll-question">📊 ${escAttr(post.poll.question)}</div>
+    <div id="poll-options"></div>
+  </div>
+  <script>
+  (function(){
+    const pollData=${pollJson};
+    const postId='${post.id}';
+    const ns='tempos-ridiculos.com';
+    const votedKey='tr_poll_voted_'+postId;
+    const container=document.getElementById('poll-options');
+    function pct(vals,i){const total=vals.reduce((a,b)=>a+b,0);return total?Math.round(vals[i]/total*100):0;}
+    function renderResults(vals){
+      container.innerHTML=pollData.options.map((opt,i)=>
+        '<div class="poll-result"><div class="poll-result-label">'+opt+' — '+pct(vals,i)+'% ('+vals[i]+')</div><div class="poll-bar-bg"><div class="poll-bar-fill" style="width:'+pct(vals,i)+'%"></div></div></div>'
+      ).join('');
+    }
+    function fetchAll(cb){
+      Promise.all(pollData.options.map((opt,i)=>
+        fetch('https://abacus.jasoncameron.dev/get/'+ns+'/poll-'+postId+'-'+i).then(r=>r.ok?r.json():{value:0}).catch(()=>({value:0}))
+      )).then(results=>cb(results.map(r=>r.value||0)));
+    }
+    if(localStorage.getItem(votedKey)){
+      fetchAll(renderResults);
+    } else {
+      container.innerHTML=pollData.options.map((opt,i)=>
+        '<button class="poll-option-btn" data-i="'+i+'">'+opt+'</button>'
+      ).join('');
+      container.querySelectorAll('.poll-option-btn').forEach(btn=>{
+        btn.addEventListener('click',function(){
+          const i=this.dataset.i;
+          fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/poll-'+postId+'-'+i).then(()=>{
+            localStorage.setItem(votedKey,'1');
+            fetchAll(renderResults);
+          });
+        });
+      });
+    }
+  })();
+  <\/script>`;
+  }
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -469,6 +530,7 @@ ${ogImage?`<meta name="twitter:image" content="${ogImage}">`:''}
   </div>
   ${videoHtml}${imgsHtml}
   <div class="post-full-body">${formatBody(post.body)}</div>
+  ${pollHtml}
   <div class="share-bar">
     <span class="share-label">Compartilhar:</span>
     <a class="share-btn share-wa" href="https://wa.me/?text=${encodeURIComponent(post.title)}%20${encodeURIComponent(pageUrl)}" target="_blank">📱 WhatsApp</a>
@@ -570,6 +632,7 @@ async function publishPost(){
     summary:document.getElementById('post-summary').value.trim(),
     body,video:document.getElementById('post-video').value.trim(),
     images:uploadedImages.filter(Boolean),
+    poll:getPollFromForm(),
     date:new Date().toISOString()
   };
   isPublishing=true;
@@ -591,7 +654,7 @@ async function publishPost(){
     btn.disabled=false;btn.style.opacity='';btn.textContent=originalText;
     isPublishing=false;
   }
-  ['post-title','post-body','post-summary','post-video'].forEach(id=>document.getElementById(id).value='');
+  ['post-title','post-body','post-summary','post-video','post-poll-question','post-poll-options'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('imgs-preview-grid').innerHTML='';
   uploadedImages=[];
   if(ok){
@@ -647,6 +710,8 @@ function editPost(id){
   document.getElementById('post-summary').value=post.summary||'';
   document.getElementById('post-body').value=post.body||'';
   document.getElementById('post-video').value=post.video||'';
+  document.getElementById('post-poll-question').value=post.poll?post.poll.question:'';
+  document.getElementById('post-poll-options').value=post.poll?post.poll.options.join('\n'):'';
   uploadedImages=post.images?[...post.images]:[];
   const grid=document.getElementById('imgs-preview-grid');
   grid.innerHTML=uploadedImages.map((src,idx)=>src?`<div class="img-preview-item"><img src="${src}"><button onclick="removeImg(${idx},this)">✕</button></div>`:'').join('');
@@ -668,7 +733,7 @@ async function updatePost(id){
   const posts=getPosts();
   const idx=posts.findIndex(p=>p.id===id);
   if(idx===-1)return;
-  posts[idx]={...posts[idx],title,category:document.getElementById('post-category').value,summary:document.getElementById('post-summary').value.trim(),body,video:document.getElementById('post-video').value.trim(),images:uploadedImages.filter(Boolean)};
+  posts[idx]={...posts[idx],title,category:document.getElementById('post-category').value,summary:document.getElementById('post-summary').value.trim(),body,video:document.getElementById('post-video').value.trim(),images:uploadedImages.filter(Boolean),poll:getPollFromForm()};
   isPublishing=true;
   const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
   btn.disabled=true;btn.style.opacity='.6';
@@ -687,7 +752,7 @@ async function updatePost(id){
     btn.disabled=false;btn.style.opacity='';btn.textContent=originalText;
     isPublishing=false;
   }
-  ['post-title','post-body','post-summary','post-video'].forEach(i=>document.getElementById(i).value='');
+  ['post-title','post-body','post-summary','post-video','post-poll-question','post-poll-options'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('imgs-preview-grid').innerHTML='';uploadedImages=[];
   if(ok){
     const msg=document.getElementById('success-msg');msg.style.display='block';setTimeout(()=>msg.style.display='none',3000);
