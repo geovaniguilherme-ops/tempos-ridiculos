@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="style.css">
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/resize-quill-image@1.0.10/dist/index.iife.js"></script>
 </head>
 <body>
 
@@ -237,6 +238,9 @@ function ensureQuillEditor(){
     return null;
   }
   try{
+    if(typeof ImageResize!=='undefined'){
+      try{Quill.register('modules/imageResize',ImageResize);}catch(e){console.error('Falha ao registrar modulo de redimensionar imagem:',e);}
+    }
     quillEditor=new Quill('#post-body-editor',{
       theme:'snow',
       placeholder:'Escreva aqui o conteúdo completo...',
@@ -253,7 +257,8 @@ function ensureQuillEditor(){
             ['clean']
           ],
           handlers:{image:quillImageHandler}
-        }
+        },
+        imageResize:typeof ImageResize!=='undefined'?{}:undefined
       }
     });
   }catch(e){
@@ -262,6 +267,7 @@ function ensureQuillEditor(){
   }
   return quillEditor;
 }
+let pendingImageUploads={};
 function quillImageHandler(){
   const input=document.createElement('input');
   input.setAttribute('type','file');
@@ -273,7 +279,7 @@ function quillImageHandler(){
     const token=getGhToken();
     if(!token){alert('Faça login com o token do GitHub antes de inserir imagens.');return;}
     const reader=new FileReader();
-    reader.onload=async()=>{
+    reader.onload=()=>{
       const range=quillEditor.getSelection(true)||{index:quillEditor.getLength()};
       const tempId='upl-'+Date.now()+'-'+Math.random().toString(36).slice(2);
       quillEditor.insertEmbed(range.index,'image',reader.result);
@@ -284,13 +290,7 @@ function quillImageHandler(){
       const m=reader.result.match(/^data:(image\/\w+);base64,/);
       const ext=MIME_EXT[m?m[1]:'']||'jpg';
       const filename=`images/inline-${Date.now()}.${ext}`;
-      const uploaded=await uploadImageToGitHub(reader.result,filename);
-      if(uploaded){
-        const target=quillEditor.root.querySelector(`img[data-uploading="${tempId}"]`);
-        if(target){target.src=`${SITE_URL}/${uploaded}`;target.removeAttribute('data-uploading');}
-      } else {
-        alert('Não consegui enviar a imagem pro servidor, mas ela continua visível aqui no editor. Tente remover e inserir de novo antes de publicar.');
-      }
+      pendingImageUploads[tempId]=uploadImageToGitHub(reader.result,filename);
     };
     reader.readAsDataURL(file);
   };
@@ -562,6 +562,24 @@ function addComment(postId){
 function looksLikeHtml(s){return /<[a-z][\s\S]*>/i.test(s||'');}
 function legacyTextToHtml(text){return (text||'').split('\n\n').filter(p=>p.trim()).map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('');}
 function formatBody(text){return looksLikeHtml(text)?text:legacyTextToHtml(text);}
+async function resolvePendingQuillImages(){
+  const ids=Object.keys(pendingImageUploads);
+  if(!ids.length)return 0;
+  const results=await Promise.all(ids.map(id=>pendingImageUploads[id]));
+  let failures=0;
+  ids.forEach((id,i)=>{
+    const uploaded=results[i];
+    const target=quillEditor&&quillEditor.root.querySelector(`img[data-uploading="${id}"]`);
+    if(target&&uploaded){
+      target.src=`${SITE_URL}/${uploaded}`;
+      target.removeAttribute('data-uploading');
+    } else {
+      failures++;
+    }
+    delete pendingImageUploads[id];
+  });
+  return failures;
+}
 function getQuillBody(){
   const q=ensureQuillEditor();
   if(q)return q.root.innerHTML.trim();
@@ -877,8 +895,11 @@ function removeImg(idx,btn){uploadedImages[idx]=null;btn.parentElement.remove();
 
 async function publishPost(){
   if(isPublishing)return;
-  const title=document.getElementById('post-title').value.trim(),body=getQuillBody();
+  const title=document.getElementById('post-title').value.trim();
   if(!title||!quillHasContent()){alert('Título e texto são obrigatórios!');return;}
+  const failures=await resolvePendingQuillImages();
+  if(failures>0&&!confirm(failures+' imagem(ns) não terminaram de enviar pro servidor e vão ficar mais pesadas no post (em base64). Quer publicar assim mesmo?'))return;
+  const body=getQuillBody();
   const post={
     id:'p'+Date.now(),title,
     category:document.getElementById('post-category').value,
@@ -985,8 +1006,11 @@ function editPost(id){
 
 async function updatePost(id){
   if(isPublishing)return;
-  const title=document.getElementById('post-title').value.trim(),body=getQuillBody();
+  const title=document.getElementById('post-title').value.trim();
   if(!title||!quillHasContent()){alert('Título e texto são obrigatórios!');return;}
+  const failures=await resolvePendingQuillImages();
+  if(failures>0&&!confirm(failures+' imagem(ns) não terminaram de enviar pro servidor e vão ficar mais pesadas no post (em base64). Quer atualizar assim mesmo?'))return;
+  const body=getQuillBody();
   const posts=getPosts();
   const idx=posts.findIndex(p=>p.id===id);
   if(idx===-1)return;
