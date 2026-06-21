@@ -275,17 +275,21 @@ function quillImageHandler(){
     const reader=new FileReader();
     reader.onload=async()=>{
       const range=quillEditor.getSelection(true)||{index:quillEditor.getLength()};
-      quillEditor.insertText(range.index,'Enviando imagem...',{italic:true});
+      const tempId='upl-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+      quillEditor.insertEmbed(range.index,'image',reader.result);
+      quillEditor.setSelection(range.index+1);
+      const imgs=quillEditor.root.querySelectorAll('img');
+      const justInserted=imgs[imgs.length-1];
+      if(justInserted)justInserted.setAttribute('data-uploading',tempId);
       const m=reader.result.match(/^data:(image\/\w+);base64,/);
       const ext=MIME_EXT[m?m[1]:'']||'jpg';
       const filename=`images/inline-${Date.now()}.${ext}`;
       const uploaded=await uploadImageToGitHub(reader.result,filename);
-      quillEditor.deleteText(range.index,'Enviando imagem...'.length);
       if(uploaded){
-        quillEditor.insertEmbed(range.index,'image',`${SITE_URL}/${uploaded}`);
-        quillEditor.setSelection(range.index+1);
+        const target=quillEditor.root.querySelector(`img[data-uploading="${tempId}"]`);
+        if(target){target.src=`${SITE_URL}/${uploaded}`;target.removeAttribute('data-uploading');}
       } else {
-        alert('Erro ao enviar a imagem. Tente de novo.');
+        alert('Não consegui enviar a imagem pro servidor, mas ela continua visível aqui no editor. Tente remover e inserir de novo antes de publicar.');
       }
     };
     reader.readAsDataURL(file);
