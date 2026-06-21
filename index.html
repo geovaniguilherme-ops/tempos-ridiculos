@@ -932,6 +932,31 @@ async function deletePostPage(postId){
     return del.ok;
   }catch(e){return false;}
 }
+function buildSitemapXml(posts){
+  const urls=[`  <url>\n    <loc>${SITE_URL}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>`];
+  posts.forEach(p=>{
+    const lastmod=(p.date||'').slice(0,10);
+    urls.push(`  <url>\n    <loc>${SITE_URL}/posts/${p.id}.html</loc>\n${lastmod?`    <lastmod>${lastmod}</lastmod>\n`:''}    <changefreq>monthly</changefreq>\n    <priority>0.8</priority>\n  </url>`);
+  });
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
+}
+async function updateSitemap(){
+  const token=getGhToken();
+  if(!token)return false;
+  try{
+    const xml=buildSitemapXml(getPosts());
+    const path='sitemap.xml';
+    const api=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`;
+    let sha=null;
+    const head=await fetch(api,{headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json'}});
+    if(head.ok){const j=await head.json();sha=j.sha;}
+    const content=btoa(unescape(encodeURIComponent(xml)));
+    const body={message:'Atualiza sitemap.xml',content};
+    if(sha)body.sha=sha;
+    const put=await fetch(api,{method:'PUT',headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    return put.ok;
+  }catch(e){return false;}
+}
 
 function previewImages(input){
   const grid=document.getElementById('imgs-preview-grid');
@@ -980,7 +1005,7 @@ async function publishPost(){
     btn.textContent='⏳ Publicando...';
     const posts=getPosts();posts.unshift(post);
     ok=await savePosts(posts);
-    if(ok){btn.textContent='⏳ Criando página do post...';await publishPostPage(post);}
+    if(ok){btn.textContent='⏳ Criando página do post...';await publishPostPage(post);await updateSitemap();}
   }catch(e){
     alert('Erro inesperado ao publicar: '+e.message+'. Tente de novo.');
   }finally{
@@ -1029,6 +1054,7 @@ async function deletePost(id){
   try{
     await savePosts(getPosts().filter(p=>p.id!==id));
     await deletePostPage(id);
+    await updateSitemap();
   }catch(e){
     alert('Erro inesperado ao excluir: '+e.message+'. Tente de novo.');
   }finally{
@@ -1094,7 +1120,7 @@ async function updatePost(id){
     }
     btn.textContent='⏳ Atualizando...';
     ok=await savePosts(posts);
-    if(ok){btn.textContent='⏳ Atualizando página do post...';await publishPostPage(posts[idx]);}
+    if(ok){btn.textContent='⏳ Atualizando página do post...';await publishPostPage(posts[idx]);await updateSitemap();}
   }catch(e){
     alert('Erro inesperado ao atualizar: '+e.message+'. Tente de novo.');
   }finally{
