@@ -725,12 +725,12 @@ window.addEventListener('hashchange',checkAdminHash);
   if(window.location.hash==='#admin-benedito'){showPage('admin');}
 })();
 
-// Contador de visitas GoatCounter
-fetch('https://temposridiculos.goatcounter.com/counter/'+encodeURIComponent(window.location.pathname)+'.json')
+// Contador de visitas (serviço gratuito, sem necessidade de configuração)
+fetch('https://abacus.jasoncameron.dev/hit/tempos-ridiculos.com/homepage')
   .then(r=>r.json())
   .then(d=>{
     const el=document.getElementById('visit-count');
-    if(el)el.textContent=d.count_unique||d.count||'--';
+    if(el)el.textContent=d.value||'--';
   }).catch(()=>{
     const el=document.getElementById('visit-count');
     if(el)el.textContent='--';
