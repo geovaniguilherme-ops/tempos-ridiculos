@@ -365,6 +365,38 @@ function getGhToken(){
   }
   return t?t.trim():null;
 }
+const MIME_EXT={'image/jpeg':'jpg','image/jpg':'jpg','image/png':'png','image/gif':'gif','image/webp':'webp'};
+async function uploadImageToGitHub(dataUri,filename,retried){
+  const token=getGhToken();
+  if(!token)return null;
+  const m=dataUri.match(/^data:(image\/\w+);base64,(.*)$/s);
+  if(!m)return dataUri; // não é base64 (já é um caminho/URL), mantém como está
+  try{
+    const api=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${filename}`;
+    const body={message:'Upload de imagem via painel admin',content:m[2]};
+    const put=await fetch(api,{method:'PUT',headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(put.ok)return filename;
+    if((put.status===401||put.status===403)&&!retried){
+      localStorage.removeItem('tr_gh_token');
+      return uploadImageToGitHub(dataUri,filename,true);
+    }
+    return null;
+  }catch(e){return null;}
+}
+async function processPostImages(postId,images){
+  const out=[];
+  for(let i=0;i<images.length;i++){
+    const img=images[i];
+    if(!img.startsWith('data:')){out.push(img);continue;} // já é caminho/URL salvo antes
+    const m=img.match(/^data:(image\/\w+);base64,/);
+    const ext=MIME_EXT[m?m[1]:'']||'jpg';
+    const filename=`images/${postId}-${i}.${ext}`;
+    const uploaded=await uploadImageToGitHub(img,filename);
+    out.push(uploaded||img); // se falhar, mantém base64 como fallback
+  }
+  return out;
+}
+
 async function publishToGitHub(posts,retried){
   const token=getGhToken();
   if(!token){alert('Sem token salvo — este post ficou só salvo neste navegador, não foi publicado de verdade.');return false;}
@@ -591,9 +623,14 @@ async function publishPost(){
   };
   isPublishing=true;
   const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
-  btn.disabled=true;btn.style.opacity='.6';btn.textContent='⏳ Publicando...';
+  btn.disabled=true;btn.style.opacity='.6';
   let ok=false;
   try{
+    if(post.images.length){
+      btn.textContent='⏳ Enviando imagens...';
+      post.images=await processPostImages(post.id,post.images);
+    }
+    btn.textContent='⏳ Publicando...';
     const posts=getPosts();posts.unshift(post);
     ok=await savePosts(posts);
   }catch(e){
@@ -681,9 +718,14 @@ async function updatePost(id){
   posts[idx]={...posts[idx],title,category:document.getElementById('post-category').value,summary:document.getElementById('post-summary').value.trim(),body,video:document.getElementById('post-video').value.trim(),images:uploadedImages.filter(Boolean)};
   isPublishing=true;
   const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
-  btn.disabled=true;btn.style.opacity='.6';btn.textContent='⏳ Atualizando...';
+  btn.disabled=true;btn.style.opacity='.6';
   let ok=false;
   try{
+    if(posts[idx].images.length){
+      btn.textContent='⏳ Enviando imagens...';
+      posts[idx].images=await processPostImages(posts[idx].id,posts[idx].images);
+    }
+    btn.textContent='⏳ Atualizando...';
     ok=await savePosts(posts);
   }catch(e){
     alert('Erro inesperado ao atualizar: '+e.message+'. Tente de novo.');
