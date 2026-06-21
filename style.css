@@ -102,6 +102,9 @@
   .poll-result-label{font-family:'Space Mono',monospace;font-size:.75rem;color:var(--ink);margin-bottom:.3rem;}
   .poll-bar-bg{width:100%;height:.6rem;background:var(--border);overflow:hidden;}
   .poll-bar-fill{height:100%;background:var(--gold);transition:width .4s ease;}
+  .poll-result-mine .poll-result-label{color:var(--gold);font-weight:700;}
+  .poll-change-btn{margin-top:.8rem;background:transparent;border:none;color:var(--gray);font-family:'Space Mono',monospace;font-size:.7rem;text-decoration:underline;cursor:pointer;padding:0;}
+  .poll-change-btn:hover{color:var(--gold);}
   .share-bar{display:flex;gap:.5rem;align-items:center;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);flex-wrap:wrap;}
   .share-label{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);}
   .share-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .8rem;font-family:'Space Mono',monospace;font-size:.65rem;text-decoration:none;color:white;cursor:pointer;border:none;transition:opacity .2s;}
