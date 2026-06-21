@@ -184,6 +184,15 @@
         <div id="quill-fallback-warning" style="display:none;color:#c94a4a;font-size:.8rem;margin-top:.5rem">⚠ O editor de texto rico não carregou (problema de conexão). Use o campo simples abaixo por enquanto — a formatação ficará em texto puro.</div>
         <textarea id="post-body-fallback" style="display:none;min-height:200px;resize:vertical" placeholder="Escreva aqui o conteúdo completo..."></textarea>
       </div>
+      <div class="form-group">
+        <label>Imagem de capa (usada em destaque, cards e ao compartilhar o link)</label>
+        <button type="button" class="btn-edit" onclick="openCoverPicker(this)">🖼 Escolher imagem de capa</button>
+        <div id="cover-preview" style="display:none;margin-top:.6rem">
+          <img id="cover-preview-img" style="max-width:220px;max-height:150px;border:1px solid var(--border);display:block;margin-bottom:.4rem">
+          <button type="button" class="btn-danger" onclick="clearCoverImage()" style="font-size:.65rem">Remover capa</button>
+        </div>
+        <div id="cover-picker-modal" class="cover-picker-grid" style="display:none"></div>
+      </div>
       <button class="btn-publish" onclick="publishPost()">⚡ Publicar agora</button>
     </div>
     <div class="admin-panel" id="tab-posts">
@@ -421,7 +430,7 @@ function renderHome(){
   const fa=document.getElementById('featured-area');
   if(posts.length>0){
     const f=posts[0];
-    let img=f.images&&f.images.length>0?f.images[0]:null;
+    let img=f.coverImage||(f.images&&f.images.length>0?f.images[0]:null);
     if(!img&&f.video){
       const lines=f.video.split('\n').map(s=>s.trim()).filter(Boolean);
       const first=lines[0]||'';
@@ -444,7 +453,7 @@ function renderHome(){
     grid.innerHTML=`<div class="empty-state">Nenhum post ainda. Em breve!</div>`;
   } else {
     grid.innerHTML=rest.map(p=>{
-      let thumb=p.images&&p.images.length>0?p.images[0]:null;
+      let thumb=p.coverImage||(p.images&&p.images.length>0?p.images[0]:null);
       if(!thumb&&p.video){
         const lines=p.video.split('\n').map(s=>s.trim()).filter(Boolean);
         const match=(lines[0]||'').match(/(?:v=|embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
@@ -580,6 +589,43 @@ async function resolvePendingQuillImages(){
   });
   return failures;
 }
+
+let selectedCoverImage=null;
+function scanAvailableImages(){
+  const imgs=[];
+  uploadedImages.filter(Boolean).forEach(src=>{if(!imgs.includes(src))imgs.push(src);});
+  if(quillEditor){
+    quillEditor.root.querySelectorAll('img').forEach(img=>{
+      if(img.src&&!imgs.includes(img.src))imgs.push(img.src);
+    });
+  }
+  return imgs;
+}
+async function openCoverPicker(btn){
+  if(btn){btn.disabled=true;btn.textContent='⏳ Verificando imagens...';}
+  await resolvePendingQuillImages();
+  if(btn){btn.disabled=false;btn.textContent='🖼 Escolher imagem de capa';}
+  const imgs=scanAvailableImages();
+  const modal=document.getElementById('cover-picker-modal');
+  if(!imgs.length){
+    modal.innerHTML='<p style="font-size:.8rem;color:var(--gray);padding:.5rem 0">Nenhuma imagem encontrada ainda. Insira uma imagem no texto ou no campo de imagens abaixo primeiro.</p>';
+    modal.style.display='block';
+    return;
+  }
+  modal.innerHTML=imgs.map(src=>`<img src="${src}" class="cover-picker-thumb" onclick='selectCoverImage(${JSON.stringify(src)})'>`).join('');
+  modal.style.display='flex';
+}
+function selectCoverImage(src){
+  selectedCoverImage=src;
+  document.getElementById('cover-preview-img').src=src;
+  document.getElementById('cover-preview').style.display='block';
+  document.getElementById('cover-picker-modal').style.display='none';
+}
+function clearCoverImage(){
+  selectedCoverImage=null;
+  document.getElementById('cover-preview').style.display='none';
+  document.getElementById('cover-preview-img').src='';
+}
 function getQuillBody(){
   const q=ensureQuillEditor();
   if(q)return q.root.innerHTML.trim();
@@ -605,7 +651,7 @@ function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').
 function buildPostPageHtml(post){
   const pageUrl=`${SITE_URL}/posts/${post.id}.html`;
   const imgs=(post.images||[]).map(s=>s.startsWith('http')?s:`../${s}`);
-  const ogImage=imgs.length?(imgs[0].startsWith('http')?imgs[0]:`${SITE_URL}/${post.images[0]}`):`${SITE_URL}/images/og-default.jpg`;
+  const ogImage=post.coverImage||(imgs.length?(imgs[0].startsWith('http')?imgs[0]:`${SITE_URL}/${post.images[0]}`):`${SITE_URL}/images/og-default.jpg`);
   let videoHtml='';
   if(post.video){
     videoHtml=post.video.split('\n').map(s=>s.trim()).filter(Boolean).map(line=>{
@@ -907,6 +953,7 @@ async function publishPost(){
     body,video:document.getElementById('post-video').value.trim(),
     images:uploadedImages.filter(Boolean),
     poll:getPollFromForm(),
+    coverImage:selectedCoverImage,
     date:new Date().toISOString()
   };
   isPublishing=true;
@@ -933,6 +980,7 @@ async function publishPost(){
   const fb=document.getElementById('post-body-fallback');if(fb)fb.value='';
   document.getElementById('imgs-preview-grid').innerHTML='';
   uploadedImages=[];
+  clearCoverImage();
   if(ok){
     const msg=document.getElementById('success-msg');
     msg.textContent='✓ Post publicado com sucesso!';
@@ -991,6 +1039,14 @@ function editPost(id){
   document.getElementById('post-poll-question').value=post.poll?post.poll.question:'';
   document.getElementById('post-poll-options').value=post.poll?post.poll.options.join('\n'):'';
   uploadedImages=post.images?[...post.images]:[];
+  selectedCoverImage=post.coverImage||null;
+  if(selectedCoverImage){
+    document.getElementById('cover-preview-img').src=selectedCoverImage;
+    document.getElementById('cover-preview').style.display='block';
+  } else {
+    document.getElementById('cover-preview').style.display='none';
+  }
+  document.getElementById('cover-picker-modal').style.display='none';
   const grid=document.getElementById('imgs-preview-grid');
   grid.innerHTML=uploadedImages.map((src,idx)=>src?`<div class="img-preview-item"><img src="${src}"><button onclick="removeImg(${idx},this)">✕</button></div>`:'').join('');
   // Change publish button to update
@@ -1014,7 +1070,7 @@ async function updatePost(id){
   const posts=getPosts();
   const idx=posts.findIndex(p=>p.id===id);
   if(idx===-1)return;
-  posts[idx]={...posts[idx],title,category:document.getElementById('post-category').value,summary:document.getElementById('post-summary').value.trim(),body,video:document.getElementById('post-video').value.trim(),images:uploadedImages.filter(Boolean),poll:getPollFromForm()};
+  posts[idx]={...posts[idx],title,category:document.getElementById('post-category').value,summary:document.getElementById('post-summary').value.trim(),body,video:document.getElementById('post-video').value.trim(),images:uploadedImages.filter(Boolean),poll:getPollFromForm(),coverImage:selectedCoverImage};
   isPublishing=true;
   const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
   btn.disabled=true;btn.style.opacity='.6';
@@ -1037,6 +1093,7 @@ async function updatePost(id){
   if(quillEditor)quillEditor.setContents([]);
   const fb=document.getElementById('post-body-fallback');if(fb)fb.value='';
   document.getElementById('imgs-preview-grid').innerHTML='';uploadedImages=[];
+  clearCoverImage();
   if(ok){
     const msg=document.getElementById('success-msg');msg.style.display='block';setTimeout(()=>msg.style.display='none',3000);
     msg.textContent='✓ Post atualizado com sucesso!';
