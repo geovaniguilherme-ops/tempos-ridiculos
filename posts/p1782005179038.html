@@ -42,16 +42,24 @@
     const postId='p1782005179038';
     const ns='tempos-ridiculos.com';
     const reactions=['like','laugh','angry'];
+    const reactedKey='tr_react_'+postId;
+    function getReacted(){try{return JSON.parse(localStorage.getItem(reactedKey)||'[]');}catch(e){return[];}}
+    function markReacted(r){const list=getReacted();if(!list.includes(r)){list.push(r);localStorage.setItem(reactedKey,JSON.stringify(list));}}
+    const reacted=getReacted();
     reactions.forEach(r=>{
       fetch('https://abacus.jasoncameron.dev/get/'+ns+'/react-'+postId+'-'+r).then(res=>res.ok?res.json():{value:0}).catch(()=>({value:0})).then(d=>{
         const el=document.getElementById('r-count-'+r);if(el)el.textContent=d.value||0;
       });
     });
     document.querySelectorAll('.reaction-btn').forEach(btn=>{
+      const r=btn.dataset.r;
+      if(reacted.includes(r))btn.classList.add('reaction-done');
       btn.addEventListener('click',function(){
-        const r=this.dataset.r;
-        this.classList.add('reaction-pop');
+        if(reacted.includes(r))return;
+        this.classList.add('reaction-pop','reaction-done');
         setTimeout(()=>this.classList.remove('reaction-pop'),300);
+        markReacted(r);
+        reacted.push(r);
         fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/react-'+postId+'-'+r).then(res=>res.json()).then(d=>{
           const el=document.getElementById('r-count-'+r);if(el)el.textContent=d.value;
         });
