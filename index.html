@@ -898,7 +898,10 @@ function updateReadingProgress(){
 }
 window.addEventListener('scroll',updateReadingProgress);
 updateReadingProgress();
-fetch('https://abacus.jasoncameron.dev/hit/tempos-ridiculos.com/views-${post.id}').catch(()=>{});
+(function(){
+  const isOwnerVisit=(()=>{try{return localStorage.getItem('tr_owner')==='1';}catch(e){return false;}})();
+  fetch(\`https://abacus.jasoncameron.dev/\${isOwnerVisit?'get':'hit'}/tempos-ridiculos.com/views-${post.id}\`).catch(()=>{});
+})();
 <\/script>
 </body>
 </html>`;
@@ -1167,6 +1170,7 @@ document.getElementById('current-date').textContent=new Date().toLocaleDateStrin
 
 function checkAdminHash(){
   if(window.location.hash==='#admin-benedito'){
+    try{localStorage.setItem('tr_owner','1');}catch(e){}
     showPage('admin');
   } else if(document.getElementById('page-admin').classList.contains('active')){
     showPage('home');
@@ -1177,11 +1181,15 @@ window.addEventListener('hashchange',checkAdminHash);
 (async function boot(){
   await fetchRemotePosts();
   renderHome();
-  if(window.location.hash==='#admin-benedito'){showPage('admin');}
+  if(window.location.hash==='#admin-benedito'){
+    try{localStorage.setItem('tr_owner','1');}catch(e){}
+    showPage('admin');
+  }
 })();
 
 // Contador de visitas (serviço gratuito, sem necessidade de configuração)
-fetch('https://abacus.jasoncameron.dev/hit/tempos-ridiculos.com/homepage')
+const isOwnerVisit=(()=>{try{return localStorage.getItem('tr_owner')==='1';}catch(e){return false;}})();
+fetch(`https://abacus.jasoncameron.dev/${isOwnerVisit?'get':'hit'}/tempos-ridiculos.com/homepage`)
   .then(r=>r.json())
   .then(d=>{
     const el=document.getElementById('visit-count');
