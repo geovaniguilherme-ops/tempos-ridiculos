@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://geovaniguilherme-ops.github.io/tempos-ridiculos/sitemap.xml
