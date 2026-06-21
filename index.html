@@ -349,7 +349,11 @@ function getPosts(){
 async function fetchRemotePosts(){
   try{
     const r=await fetch('data/posts.json?t='+Date.now(),{cache:'no-store'});
-    if(r.ok){_postsCache=await r.json();localStorage.setItem('tr_posts',JSON.stringify(_postsCache));return;}
+    if(r.ok){
+      _postsCache=await r.json();
+      try{localStorage.setItem('tr_posts',JSON.stringify(_postsCache));}catch(e){}
+      return;
+    }
   }catch(e){}
   try{_postsCache=JSON.parse(localStorage.getItem('tr_posts')||'[]');}catch(e){_postsCache=[];}
 }
@@ -394,7 +398,12 @@ async function publishToGitHub(posts,retried){
     return false;
   }
 }
-async function savePosts(p){_postsCache=p;localStorage.setItem('tr_posts',JSON.stringify(p));return await publishToGitHub(p);}
+async function savePosts(p){
+  _postsCache=p;
+  try{localStorage.setItem('tr_posts',JSON.stringify(p));}
+  catch(e){console.warn('Cache local cheio, pulando (isso não afeta a publicação de verdade):',e);}
+  return await publishToGitHub(p);
+}
 function getComments(id){try{return JSON.parse(localStorage.getItem('tr_cmts_'+id)||'[]');}catch(e){return[];}}
 function saveComments(id,c){localStorage.setItem('tr_cmts_'+id,JSON.stringify(c));}
 
@@ -583,10 +592,16 @@ async function publishPost(){
   isPublishing=true;
   const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
   btn.disabled=true;btn.style.opacity='.6';btn.textContent='⏳ Publicando...';
-  const posts=getPosts();posts.unshift(post);
-  const ok=await savePosts(posts);
-  btn.disabled=false;btn.style.opacity='';btn.textContent=originalText;
-  isPublishing=false;
+  let ok=false;
+  try{
+    const posts=getPosts();posts.unshift(post);
+    ok=await savePosts(posts);
+  }catch(e){
+    alert('Erro inesperado ao publicar: '+e.message+'. Tente de novo.');
+  }finally{
+    btn.disabled=false;btn.style.opacity='';btn.textContent=originalText;
+    isPublishing=false;
+  }
   ['post-title','post-body','post-summary','post-video'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('imgs-preview-grid').innerHTML='';
   uploadedImages=[];
@@ -622,8 +637,13 @@ async function deletePost(id){
   if(!confirm('Excluir este post?'))return;
   if(isPublishing)return;
   isPublishing=true;
-  await savePosts(getPosts().filter(p=>p.id!==id));
-  isPublishing=false;
+  try{
+    await savePosts(getPosts().filter(p=>p.id!==id));
+  }catch(e){
+    alert('Erro inesperado ao excluir: '+e.message+'. Tente de novo.');
+  }finally{
+    isPublishing=false;
+  }
   renderAdmin();
 }
 
@@ -662,9 +682,15 @@ async function updatePost(id){
   isPublishing=true;
   const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
   btn.disabled=true;btn.style.opacity='.6';btn.textContent='⏳ Atualizando...';
-  const ok=await savePosts(posts);
-  btn.disabled=false;btn.style.opacity='';btn.textContent=originalText;
-  isPublishing=false;
+  let ok=false;
+  try{
+    ok=await savePosts(posts);
+  }catch(e){
+    alert('Erro inesperado ao atualizar: '+e.message+'. Tente de novo.');
+  }finally{
+    btn.disabled=false;btn.style.opacity='';btn.textContent=originalText;
+    isPublishing=false;
+  }
   ['post-title','post-body','post-summary','post-video'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('imgs-preview-grid').innerHTML='';uploadedImages=[];
   if(ok){
