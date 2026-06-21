@@ -19,6 +19,7 @@
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tr_theme')||'dark');<\/script>
 </head>
 <body>
+<div class="reading-progress-bar" id="reading-progress"></div>
 <header class="site-header">
   <a href="../index.html" style="text-decoration:none;color:var(--ink)"><div class="site-title">Tempos Ridículos</div></a>
 </header>
@@ -31,6 +32,79 @@
   </div>
   <img src="../images/p1782004948886-0.jpg" class="post-full-image" alt="Brasília Não Foi Feita Pra Você">
   <div class="post-full-body"><p>Você consegue entender agora que toda a estrutura Estatal demoníaca do Brasil foi criada contra o povo e pra favorecer sempre uma meia duzia de vagabundos que usam o bem público para si próprio? A guerra não é contra direitaxesquerda, nem lula x bolsonaro. É Establishment x povo.</p></div>
+  <div class="reactions-bar" id="reactions-bar">
+    <button class="reaction-btn" data-r="like">👍 <span id="r-count-like">0</span></button>
+    <button class="reaction-btn" data-r="laugh">😂 <span id="r-count-laugh">0</span></button>
+    <button class="reaction-btn" data-r="angry">😡 <span id="r-count-angry">0</span></button>
+  </div>
+  <script>
+  (function(){
+    const postId='p1782004948886';
+    const ns='tempos-ridiculos.com';
+    const reactions=['like','laugh','angry'];
+    reactions.forEach(r=>{
+      fetch('https://abacus.jasoncameron.dev/get/'+ns+'/react-'+postId+'-'+r).then(res=>res.ok?res.json():{value:0}).catch(()=>({value:0})).then(d=>{
+        const el=document.getElementById('r-count-'+r);if(el)el.textContent=d.value||0;
+      });
+    });
+    document.querySelectorAll('.reaction-btn').forEach(btn=>{
+      btn.addEventListener('click',function(){
+        const r=this.dataset.r;
+        this.classList.add('reaction-pop');
+        setTimeout(()=>this.classList.remove('reaction-pop'),300);
+        fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/react-'+postId+'-'+r).then(res=>res.json()).then(d=>{
+          const el=document.getElementById('r-count-'+r);if(el)el.textContent=d.value;
+        });
+      });
+    });
+  })();
+  <\/script>
+  <div class="indig-widget">
+    <div class="indig-question">🌡️ De 1 a 10, o quão "tempos ridículos" é isso?</div>
+    <div class="indig-scale" id="indig-scale"></div>
+    <div class="indig-avg" id="indig-avg"></div>
+  </div>
+  <script>
+  (function(){
+    const postId='p1782004948886';
+    const ns='tempos-ridiculos.com';
+    const votedKey='tr_indig_voted_'+postId;
+    const scale=document.getElementById('indig-scale');
+    const avgEl=document.getElementById('indig-avg');
+    function showAvg(){
+      Promise.all([
+        fetch('https://abacus.jasoncameron.dev/get/'+ns+'/indig-sum-'+postId).then(r=>r.ok?r.json():{value:0}).catch(()=>({value:0})),
+        fetch('https://abacus.jasoncameron.dev/get/'+ns+'/indig-count-'+postId).then(r=>r.ok?r.json():{value:0}).catch(()=>({value:0}))
+      ]).then(([sum,count])=>{
+        const c=count.value||0,s=sum.value||0;
+        const avg=c>0?(s/c).toFixed(1):'—';
+        avgEl.textContent=c>0?('Média geral: '+avg+'/10 ('+c+' '+(c==1?'voto':'votos')+')'):'Seja o primeiro a votar!';
+      });
+    }
+    const saved=votedKey&&localStorage.getItem(votedKey);
+    if(saved){
+      scale.innerHTML='<span class="indig-my-vote">Sua nota: '+saved+'/10</span>';
+      showAvg();
+    } else {
+      let html='';
+      for(let i=1;i<=10;i++)html+='<button class="indig-btn" data-v="'+i+'">'+i+'</button>';
+      scale.innerHTML=html;
+      scale.querySelectorAll('.indig-btn').forEach(btn=>{
+        btn.addEventListener('click',function(){
+          const v=parseInt(this.dataset.v);
+          const sumCalls=[];
+          for(let i=0;i<v;i++)sumCalls.push(fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/indig-sum-'+postId));
+          Promise.all([Promise.all(sumCalls),fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/indig-count-'+postId)]).then(()=>{
+            localStorage.setItem(votedKey,v);
+            scale.innerHTML='<span class="indig-my-vote">Sua nota: '+v+'/10</span>';
+            showAvg();
+          });
+        });
+      });
+      showAvg();
+    }
+  })();
+  <\/script>
   
   <div class="share-bar">
     <span class="share-label">Compartilhar:</span>
@@ -79,6 +153,17 @@ function addComment(){
   renderCmts();
 }
 renderCmts();
+function updateReadingProgress(){
+  const h=document.documentElement;
+  const scrolled=h.scrollTop;
+  const max=h.scrollHeight-h.clientHeight;
+  const pct=max>0?(scrolled/max)*100:0;
+  const bar=document.getElementById('reading-progress');
+  if(bar)bar.style.width=pct+'%';
+}
+window.addEventListener('scroll',updateReadingProgress);
+updateReadingProgress();
+fetch('https://abacus.jasoncameron.dev/hit/tempos-ridiculos.com/views-p1782004948886').catch(()=>{});
 <\/script>
 </body>
 </html>
