@@ -70,6 +70,15 @@
   .reaction-btn:hover{border-color:var(--gold);background:rgba(201,168,76,.08);}
   .reaction-pop{transform:scale(1.2);}
   .reaction-done{opacity:.55;cursor:default;border-color:var(--gold)!important;background:rgba(201,168,76,.12)!important;}
+  .support-widget{margin:2rem 0;padding:1.5rem;background:var(--paper);border:1px solid var(--gold);border-left:4px solid var(--gold);}
+  .support-title{font-family:'Playfair Display',serif;font-weight:700;font-size:1.1rem;margin-bottom:.6rem;}
+  .support-text{font-size:.9rem;line-height:1.6;color:var(--ink);margin-bottom:1rem;}
+  .support-pix-box{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;background:var(--bg);border:1px solid var(--border);padding:.8rem 1rem;}
+  .support-pix-info{display:flex;flex-direction:column;gap:.2rem;}
+  .support-pix-label{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);}
+  .support-pix-key{font-family:'Space Mono',monospace;font-size:.9rem;color:var(--ink);word-break:break-all;}
+  .support-copy-btn{background:var(--gold);color:var(--bg);border:none;padding:.5rem 1rem;font-family:'Space Mono',monospace;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;cursor:pointer;white-space:nowrap;}
+  .support-copy-btn:hover{opacity:.85;}
   .indig-widget{margin:2rem 0;padding:1.5rem;background:var(--paper);border:1px solid var(--border);}
   .indig-question{font-family:'Playfair Display',serif;font-weight:700;font-size:1.05rem;margin-bottom:1rem;}
   .indig-scale{display:flex;flex-wrap:wrap;gap:.4rem;}
