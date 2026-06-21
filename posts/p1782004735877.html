@@ -27,15 +27,60 @@
   <div class="post-full-header" style="margin-top:1rem">
     <div class="post-category">Opinião</div>
     <h1 class="post-full-title">Como Deveria Ser</h1>
-    <div class="post-full-meta"><span>📅 21 de jun. de 2026</span><span>⏱ 1 min</span></div>
+    <div class="post-full-meta"><span>📅 20 de jun. de 2026</span><span>⏱ 1 min</span></div>
   </div>
   <img src="../images/p1782004735877-0.jpg" class="post-full-image" alt="Como Deveria Ser">
   <div class="post-full-body"><p>Eu convido todos vocês a fazerem parte desse novo lado do espectro político: o Antagonista: aquele que é contra tudo e contra todos e defende apenas o próprio lado. Vem!</p></div>
+  <div class="poll-widget">
+    <div class="poll-question">📊 De que lado você se identifica?</div>
+    <div id="poll-options"></div>
+  </div>
+  <script>
+  (function(){
+    const pollData={"question":"De que lado você se identifica?","options":["Direita","Esquerda","Centro","Sou ateu em política"]};
+    const postId='p1782004735877';
+    const ns='tempos-ridiculos.com';
+    const votedKey='tr_poll_voted_'+postId;
+    const container=document.getElementById('poll-options');
+    function pct(vals,i){const total=vals.reduce((a,b)=>a+b,0);return total?Math.round(vals[i]/total*100):0;}
+    function fetchAll(cb){
+      Promise.all(pollData.options.map((opt,i)=>
+        fetch('https://abacus.jasoncameron.dev/get/'+ns+'/poll-'+postId+'-'+i).then(r=>r.ok?r.json():{value:0}).catch(()=>({value:0}))
+      )).then(results=>cb(results.map(r=>r.value||0)));
+    }
+    function renderResults(vals,myChoice){
+      container.innerHTML=pollData.options.map((opt,i)=>
+        '<div class="poll-result'+(i==myChoice?' poll-result-mine':'')+'"><div class="poll-result-label">'+(i==myChoice?'✓ ':'')+opt+' — '+pct(vals,i)+'% ('+vals[i]+')</div><div class="poll-bar-bg"><div class="poll-bar-fill" style="width:'+pct(vals,i)+'%"></div></div></div>'
+      ).join('')+'<button class="poll-change-btn" id="poll-change-btn">Mudar meu voto</button>';
+      document.getElementById('poll-change-btn').addEventListener('click',showOptions);
+    }
+    function vote(i){
+      fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/poll-'+postId+'-'+i).then(()=>{
+        localStorage.setItem(votedKey,i);
+        fetchAll(vals=>renderResults(vals,i));
+      });
+    }
+    function showOptions(){
+      container.innerHTML=pollData.options.map((opt,i)=>
+        '<button class="poll-option-btn" data-i="'+i+'">'+opt+'</button>'
+      ).join('');
+      container.querySelectorAll('.poll-option-btn').forEach(btn=>{
+        btn.addEventListener('click',function(){vote(this.dataset.i);});
+      });
+    }
+    const saved=localStorage.getItem(votedKey);
+    if(saved!==null){
+      fetchAll(vals=>renderResults(vals,parseInt(saved)));
+    } else {
+      showOptions();
+    }
+  })();
+  </script>
   <div class="share-bar">
     <span class="share-label">Compartilhar:</span>
-    <a class="share-btn share-wa" href="https://wa.me/?text=Como Deveria Ser%20https://geovaniguilherme-ops.github.io/tempos-ridiculos/posts/p1782004735877.html" target="_blank">📱 WhatsApp</a>
-    <a class="share-btn share-tw" href="https://twitter.com/intent/tweet?text=Como Deveria Ser&url=https://geovaniguilherme-ops.github.io/tempos-ridiculos/posts/p1782004735877.html" target="_blank">𝕏 Twitter</a>
-    <a class="share-btn share-fb" href="https://www.facebook.com/sharer/sharer.php?u=https://geovaniguilherme-ops.github.io/tempos-ridiculos/posts/p1782004735877.html" target="_blank">📘 Facebook</a>
+    <a class="share-btn share-wa" href="https://wa.me/?text=Como%20Deveria%20Ser%20https%3A%2F%2Fgeovaniguilherme-ops.github.io%2Ftempos-ridiculos%2Fposts%2Fp1782004735877.html" target="_blank">📱 WhatsApp</a>
+    <a class="share-btn share-tw" href="https://twitter.com/intent/tweet?text=Como%20Deveria%20Ser&url=https%3A%2F%2Fgeovaniguilherme-ops.github.io%2Ftempos-ridiculos%2Fposts%2Fp1782004735877.html" target="_blank">𝕏 Twitter</a>
+    <a class="share-btn share-fb" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgeovaniguilherme-ops.github.io%2Ftempos-ridiculos%2Fposts%2Fp1782004735877.html" target="_blank">📘 Facebook</a>
     <button class="share-btn share-copy" onclick="navigator.clipboard.writeText('https://geovaniguilherme-ops.github.io/tempos-ridiculos/posts/p1782004735877.html').then(()=>alert('Link copiado!'))">🔗 Copiar link</button>
   </div>
   <div class="comments-section">
