@@ -282,7 +282,7 @@ function quillImageHandler(){
       const uploaded=await uploadImageToGitHub(reader.result,filename);
       quillEditor.deleteText(range.index,'Enviando imagem...'.length);
       if(uploaded){
-        quillEditor.insertEmbed(range.index,'image',uploaded);
+        quillEditor.insertEmbed(range.index,'image',`${SITE_URL}/${uploaded}`);
         quillEditor.setSelection(range.index+1);
       } else {
         alert('Erro ao enviar a imagem. Tente de novo.');
