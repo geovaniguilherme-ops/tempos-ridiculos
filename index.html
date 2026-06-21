@@ -41,10 +41,11 @@
   <div class="nav-inner">
     <ul>
       <li><a onclick="goHome(this)" class="active">Início</a></li>
-      <li><a onclick="filterCategory('Opinião',this)">Opinião</a></li>
-      <li><a onclick="filterCategory('Política',this)">Política</a></li>
-      <li><a onclick="filterCategory('Cultura',this)">Cultura</a></li>
+      <li><a onclick="filterCategory('Cotidiano',this)">Cotidiano</a></li>
       <li><a onclick="filterCategory('Comportamento',this)">Comportamento</a></li>
+      <li><a onclick="filterCategory('Cultura',this)">Cultura</a></li>
+      <li><a onclick="filterCategory('Tecnologia',this)">Tecnologia</a></li>
+      <li><a onclick="filterCategory('Opinião',this)">Opinião</a></li>
       <li><a onclick="filterCategory('Vídeos',this)">Vídeos</a></li>
       <li><a onclick="showPage('sobre');setActive(this)">Sobre</a></li>
     </ul>
@@ -147,8 +148,8 @@
         <div class="form-group">
           <label>Categoria</label>
           <select id="post-category">
-            <option>Opinião</option><option>Política</option><option>Cultura</option>
-            <option>Comportamento</option><option>Tecnologia</option><option>Vídeos</option><option>Outros</option>
+            <option>Cotidiano</option><option>Comportamento</option><option>Cultura</option>
+            <option>Tecnologia</option><option>Opinião</option><option>Vídeos</option><option>Política</option><option>Outros</option>
           </select>
         </div>
         <div class="form-group">
@@ -1042,7 +1043,7 @@ function editPost(id){
   // Switch to new post tab and pre-fill
   switchTab('novo',document.querySelectorAll('.admin-tab')[0]);
   document.getElementById('post-title').value=post.title||'';
-  document.getElementById('post-category').value=post.category||'Opinião';
+  document.getElementById('post-category').value=post.category||'Cotidiano';
   document.getElementById('post-summary').value=post.summary||'';
   if(quillEditor)quillEditor.root.innerHTML=looksLikeHtml(post.body)?(post.body||''):legacyTextToHtml(post.body||'');
   else{const fb=document.getElementById('post-body-fallback');if(fb)fb.value=stripHtml(post.body||'');}
