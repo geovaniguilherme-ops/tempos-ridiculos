@@ -221,25 +221,38 @@ let currentFilter=null, uploadedImages=[], isPublishing=false;
 let _postsCache=null;
 const GH_OWNER='geovaniguilherme-ops', GH_REPO='tempos-ridiculos', GH_PATH='data/posts.json';
 
-const quillEditor=new Quill('#post-body-editor',{
-  theme:'snow',
-  placeholder:'Escreva aqui o conteúdo completo...',
-  modules:{
-    toolbar:{
-      container:[
-        [{header:[false,1,2,3]}],
-        ['bold','italic','underline','strike'],
-        [{color:[]},{background:[]}],
-        [{align:[]}],
-        ['blockquote','link','image'],
-        [{list:'ordered'},{list:'bullet'}],
-        [{indent:'-1'},{indent:'+1'}],
-        ['clean']
-      ],
-      handlers:{image:quillImageHandler}
-    }
+let quillEditor=null;
+function ensureQuillEditor(){
+  if(quillEditor)return quillEditor;
+  if(typeof Quill==='undefined'){
+    console.error('Quill nao carregou (biblioteca externa indisponivel)');
+    return null;
   }
-});
+  try{
+    quillEditor=new Quill('#post-body-editor',{
+      theme:'snow',
+      placeholder:'Escreva aqui o conteúdo completo...',
+      modules:{
+        toolbar:{
+          container:[
+            [{header:[false,1,2,3]}],
+            ['bold','italic','underline','strike'],
+            [{color:[]},{background:[]}],
+            [{align:[]}],
+            ['blockquote','link','image'],
+            [{list:'ordered'},{list:'bullet'}],
+            [{indent:'-1'},{indent:'+1'}],
+            ['clean']
+          ],
+          handlers:{image:quillImageHandler}
+        }
+      }
+    });
+  }catch(e){
+    console.error('Erro ao iniciar o editor de texto:',e);
+  }
+  return quillEditor;
+}
 function quillImageHandler(){
   const input=document.createElement('input');
   input.setAttribute('type','file');
@@ -377,7 +390,7 @@ function showPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   if(page==='home'){currentFilter=null;renderHome();}
-  if(page==='admin')renderAdmin();
+  if(page==='admin'){renderAdmin();ensureQuillEditor();}
   window.scrollTo(0,0);
 }
 
@@ -536,8 +549,8 @@ function addComment(postId){
 function looksLikeHtml(s){return /<[a-z][\s\S]*>/i.test(s||'');}
 function legacyTextToHtml(text){return (text||'').split('\n\n').filter(p=>p.trim()).map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('');}
 function formatBody(text){return looksLikeHtml(text)?text:legacyTextToHtml(text);}
-function getQuillBody(){return quillEditor.root.innerHTML.trim();}
-function quillHasContent(){return quillEditor.getText().trim().length>0;}
+function getQuillBody(){const q=ensureQuillEditor();return q?q.root.innerHTML.trim():'';}
+function quillHasContent(){const q=ensureQuillEditor();return q?q.getText().trim().length>0:false;}
 
 const SITE_URL='https://geovaniguilherme-ops.github.io/tempos-ridiculos';
 const POLL_NS='tempos-ridiculos.com';
@@ -888,6 +901,7 @@ function switchTab(tab,el){
   document.getElementById('tab-novo').classList.toggle('active',tab==='novo');
   document.getElementById('tab-posts').classList.toggle('active',tab==='posts');
   if(tab==='posts')renderAdmin();
+  if(tab==='novo')ensureQuillEditor();
 }
 
 function renderAdmin(){
@@ -926,7 +940,7 @@ function editPost(id){
   document.getElementById('post-title').value=post.title||'';
   document.getElementById('post-category').value=post.category||'Opinião';
   document.getElementById('post-summary').value=post.summary||'';
-  quillEditor.root.innerHTML=looksLikeHtml(post.body)?(post.body||''):legacyTextToHtml(post.body||'');
+  if(quillEditor)quillEditor.root.innerHTML=looksLikeHtml(post.body)?(post.body||''):legacyTextToHtml(post.body||'');
   document.getElementById('post-video').value=post.video||'';
   document.getElementById('post-poll-question').value=post.poll?post.poll.question:'';
   document.getElementById('post-poll-options').value=post.poll?post.poll.options.join('\n'):'';
