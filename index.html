@@ -468,31 +468,36 @@ function buildPostPageHtml(post){
     const votedKey='tr_poll_voted_'+postId;
     const container=document.getElementById('poll-options');
     function pct(vals,i){const total=vals.reduce((a,b)=>a+b,0);return total?Math.round(vals[i]/total*100):0;}
-    function renderResults(vals){
-      container.innerHTML=pollData.options.map((opt,i)=>
-        '<div class="poll-result"><div class="poll-result-label">'+opt+' — '+pct(vals,i)+'% ('+vals[i]+')</div><div class="poll-bar-bg"><div class="poll-bar-fill" style="width:'+pct(vals,i)+'%"></div></div></div>'
-      ).join('');
-    }
     function fetchAll(cb){
       Promise.all(pollData.options.map((opt,i)=>
         fetch('https://abacus.jasoncameron.dev/get/'+ns+'/poll-'+postId+'-'+i).then(r=>r.ok?r.json():{value:0}).catch(()=>({value:0}))
       )).then(results=>cb(results.map(r=>r.value||0)));
     }
-    if(localStorage.getItem(votedKey)){
-      fetchAll(renderResults);
-    } else {
+    function renderResults(vals,myChoice){
+      container.innerHTML=pollData.options.map((opt,i)=>
+        '<div class="poll-result'+(i==myChoice?' poll-result-mine':'')+'"><div class="poll-result-label">'+(i==myChoice?'✓ ':'')+opt+' — '+pct(vals,i)+'% ('+vals[i]+')</div><div class="poll-bar-bg"><div class="poll-bar-fill" style="width:'+pct(vals,i)+'%"></div></div></div>'
+      ).join('')+'<button class="poll-change-btn" id="poll-change-btn">Mudar meu voto</button>';
+      document.getElementById('poll-change-btn').addEventListener('click',showOptions);
+    }
+    function vote(i){
+      fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/poll-'+postId+'-'+i).then(()=>{
+        localStorage.setItem(votedKey,i);
+        fetchAll(vals=>renderResults(vals,i));
+      });
+    }
+    function showOptions(){
       container.innerHTML=pollData.options.map((opt,i)=>
         '<button class="poll-option-btn" data-i="'+i+'">'+opt+'</button>'
       ).join('');
       container.querySelectorAll('.poll-option-btn').forEach(btn=>{
-        btn.addEventListener('click',function(){
-          const i=this.dataset.i;
-          fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/poll-'+postId+'-'+i).then(()=>{
-            localStorage.setItem(votedKey,'1');
-            fetchAll(renderResults);
-          });
-        });
+        btn.addEventListener('click',function(){vote(this.dataset.i);});
       });
+    }
+    const saved=localStorage.getItem(votedKey);
+    if(saved!==null){
+      fetchAll(vals=>renderResults(vals,parseInt(saved)));
+    } else {
+      showOptions();
     }
   })();
   <\/script>`;
