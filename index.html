@@ -17,8 +17,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script data-goatcounter="https://temposridiculos.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <link rel="stylesheet" href="style.css">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.3/quill.snow.min.css" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/2.0.3/quill.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 </head>
 <body>
 
@@ -180,6 +180,8 @@
       <div class="form-group">
         <label>Texto do post *</label>
         <div id="post-body-editor" class="quill-editor-container"></div>
+        <div id="quill-fallback-warning" style="display:none;color:#c94a4a;font-size:.8rem;margin-top:.5rem">⚠ O editor de texto rico não carregou (problema de conexão). Use o campo simples abaixo por enquanto — a formatação ficará em texto puro.</div>
+        <textarea id="post-body-fallback" style="display:none;min-height:200px;resize:vertical" placeholder="Escreva aqui o conteúdo completo..."></textarea>
       </div>
       <button class="btn-publish" onclick="publishPost()">⚡ Publicar agora</button>
     </div>
@@ -222,10 +224,16 @@ let _postsCache=null;
 const GH_OWNER='geovaniguilherme-ops', GH_REPO='tempos-ridiculos', GH_PATH='data/posts.json';
 
 let quillEditor=null;
+function showQuillFallback(){
+  const warn=document.getElementById('quill-fallback-warning'),fb=document.getElementById('post-body-fallback');
+  if(warn)warn.style.display='block';
+  if(fb)fb.style.display='block';
+}
 function ensureQuillEditor(){
   if(quillEditor)return quillEditor;
   if(typeof Quill==='undefined'){
     console.error('Quill nao carregou (biblioteca externa indisponivel)');
+    showQuillFallback();
     return null;
   }
   try{
@@ -250,6 +258,7 @@ function ensureQuillEditor(){
     });
   }catch(e){
     console.error('Erro ao iniciar o editor de texto:',e);
+    showQuillFallback();
   }
   return quillEditor;
 }
@@ -549,8 +558,18 @@ function addComment(postId){
 function looksLikeHtml(s){return /<[a-z][\s\S]*>/i.test(s||'');}
 function legacyTextToHtml(text){return (text||'').split('\n\n').filter(p=>p.trim()).map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('');}
 function formatBody(text){return looksLikeHtml(text)?text:legacyTextToHtml(text);}
-function getQuillBody(){const q=ensureQuillEditor();return q?q.root.innerHTML.trim():'';}
-function quillHasContent(){const q=ensureQuillEditor();return q?q.getText().trim().length>0:false;}
+function getQuillBody(){
+  const q=ensureQuillEditor();
+  if(q)return q.root.innerHTML.trim();
+  const fb=document.getElementById('post-body-fallback');
+  return fb?legacyTextToHtml(fb.value.trim()):'';
+}
+function quillHasContent(){
+  const q=ensureQuillEditor();
+  if(q)return q.getText().trim().length>0;
+  const fb=document.getElementById('post-body-fallback');
+  return fb?fb.value.trim().length>0:false;
+}
 
 const SITE_URL='https://geovaniguilherme-ops.github.io/tempos-ridiculos';
 const POLL_NS='tempos-ridiculos.com';
@@ -885,7 +904,8 @@ async function publishPost(){
     isPublishing=false;
   }
   ['post-title','post-summary','post-video','post-poll-question','post-poll-options'].forEach(id=>document.getElementById(id).value='');
-  quillEditor.setContents([]);
+  if(quillEditor)quillEditor.setContents([]);
+  const fb=document.getElementById('post-body-fallback');if(fb)fb.value='';
   document.getElementById('imgs-preview-grid').innerHTML='';
   uploadedImages=[];
   if(ok){
@@ -941,6 +961,7 @@ function editPost(id){
   document.getElementById('post-category').value=post.category||'Opinião';
   document.getElementById('post-summary').value=post.summary||'';
   if(quillEditor)quillEditor.root.innerHTML=looksLikeHtml(post.body)?(post.body||''):legacyTextToHtml(post.body||'');
+  else{const fb=document.getElementById('post-body-fallback');if(fb)fb.value=stripHtml(post.body||'');}
   document.getElementById('post-video').value=post.video||'';
   document.getElementById('post-poll-question').value=post.poll?post.poll.question:'';
   document.getElementById('post-poll-options').value=post.poll?post.poll.options.join('\n'):'';
@@ -985,7 +1006,8 @@ async function updatePost(id){
     isPublishing=false;
   }
   ['post-title','post-summary','post-video','post-poll-question','post-poll-options'].forEach(i=>document.getElementById(i).value='');
-  quillEditor.setContents([]);
+  if(quillEditor)quillEditor.setContents([]);
+  const fb=document.getElementById('post-body-fallback');if(fb)fb.value='';
   document.getElementById('imgs-preview-grid').innerHTML='';uploadedImages=[];
   if(ok){
     const msg=document.getElementById('success-msg');msg.style.display='block';setTimeout(()=>msg.style.display='none',3000);
