@@ -208,6 +208,9 @@
   .admin-post-actions{display:flex;gap:.5rem;flex-shrink:0;}
   .success-msg{background:#2d5a27;color:white;padding:1rem;font-family:'Space Mono',monospace;font-size:.7rem;margin-bottom:1rem;display:none;}
   .btn-edit{background:transparent;color:var(--gold);border:1px solid var(--gold);padding:.4rem .8rem;font-family:'Space Mono',monospace;font-size:.6rem;cursor:pointer;}
+  .cover-picker-grid{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.8rem;padding:.8rem;background:var(--paper);border:1px solid var(--border);max-height:300px;overflow-y:auto;}
+  .cover-picker-thumb{width:100px;height:75px;object-fit:cover;cursor:pointer;border:2px solid var(--border);transition:border-color .2s;}
+  .cover-picker-thumb:hover{border-color:var(--gold);}
   .btn-edit:hover{background:var(--gold);color:white;}
 
   .back-to-top{position:fixed;bottom:2rem;right:2rem;background:var(--ink);color:var(--bg);border:none;width:44px;height:44px;font-size:1.2rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:999;}
