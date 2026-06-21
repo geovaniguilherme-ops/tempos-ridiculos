@@ -338,7 +338,7 @@
 </footer>
 
 <script>
-let currentFilter=null, uploadedImages=[];
+let currentFilter=null, uploadedImages=[], isPublishing=false;
 
 let _postsCache=null;
 const GH_OWNER='geovaniguilherme-ops', GH_REPO='tempos-ridiculos', GH_PATH='data/posts.json';
@@ -361,18 +361,19 @@ function getGhToken(){
   }
   return t?t.trim():null;
 }
-async function publishToGitHub(posts){
+async function publishToGitHub(posts,retried){
   const token=getGhToken();
-  if(!token){alert('Sem token salvo — este post ficou só salvo neste navegador, não foi publicado de verdade.');return;}
+  if(!token){alert('Sem token salvo — este post ficou só salvo neste navegador, não foi publicado de verdade.');return false;}
   try{
     const api=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
     let sha=null;
     const head=await fetch(api,{headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json'}});
     if(head.ok){const j=await head.json();sha=j.sha;}
     else if(head.status===401||head.status===403){
+      if(retried){alert('Token do GitHub ainda inválido. Tente colar de novo.');return false;}
       alert('Token do GitHub inválido ou expirado. Vou pedir um novo.');
       localStorage.removeItem('tr_gh_token');
-      return publishToGitHub(posts);
+      return publishToGitHub(posts,true);
     }
     const content=btoa(unescape(encodeURIComponent(JSON.stringify(posts,null,2))));
     const body={message:'Atualiza posts via painel admin',content};
@@ -380,13 +381,20 @@ async function publishToGitHub(posts){
     const put=await fetch(api,{method:'PUT',headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!put.ok){
       const err=await put.json().catch(()=>({}));
-      alert('Não consegui publicar de verdade no GitHub ('+(err.message||put.status)+'). O post ficou salvo só neste navegador por enquanto.');
+      if(put.status===409&&!retried){
+        // sha desatualizado (outra publicação em paralelo) — tenta de novo automaticamente
+        return publishToGitHub(posts,true);
+      }
+      alert('Não consegui publicar de verdade no GitHub ('+(err.message||put.status)+'). O post ficou salvo só neste navegador por enquanto. Tente publicar de novo em alguns segundos.');
+      return false;
     }
+    return true;
   }catch(e){
-    alert('Erro de conexão ao publicar no GitHub. O post ficou salvo só neste navegador por enquanto.');
+    alert('Erro de conexão ao publicar no GitHub. O post ficou salvo só neste navegador por enquanto. Tente de novo em alguns segundos.');
+    return false;
   }
 }
-function savePosts(p){_postsCache=p;localStorage.setItem('tr_posts',JSON.stringify(p));publishToGitHub(p);}
+async function savePosts(p){_postsCache=p;localStorage.setItem('tr_posts',JSON.stringify(p));return await publishToGitHub(p);}
 function getComments(id){try{return JSON.parse(localStorage.getItem('tr_cmts_'+id)||'[]');}catch(e){return[];}}
 function saveComments(id,c){localStorage.setItem('tr_cmts_'+id,JSON.stringify(c));}
 
@@ -560,7 +568,8 @@ function previewImages(input){
 
 function removeImg(idx,btn){uploadedImages[idx]=null;btn.parentElement.remove();}
 
-function publishPost(){
+async function publishPost(){
+  if(isPublishing)return;
   const title=document.getElementById('post-title').value.trim(),body=document.getElementById('post-body').value.trim();
   if(!title||!body){alert('Título e texto são obrigatórios!');return;}
   const post={
@@ -571,12 +580,21 @@ function publishPost(){
     images:uploadedImages.filter(Boolean),
     date:new Date().toISOString()
   };
-  const posts=getPosts();posts.unshift(post);savePosts(posts);
+  isPublishing=true;
+  const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
+  btn.disabled=true;btn.style.opacity='.6';btn.textContent='⏳ Publicando...';
+  const posts=getPosts();posts.unshift(post);
+  const ok=await savePosts(posts);
+  btn.disabled=false;btn.style.opacity='';btn.textContent=originalText;
+  isPublishing=false;
   ['post-title','post-body','post-summary','post-video'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('imgs-preview-grid').innerHTML='';
   uploadedImages=[];
-  const msg=document.getElementById('success-msg');
-  msg.style.display='block';setTimeout(()=>msg.style.display='none',3000);
+  if(ok){
+    const msg=document.getElementById('success-msg');
+    msg.textContent='✓ Post publicado com sucesso!';
+    msg.style.display='block';setTimeout(()=>msg.style.display='none',3000);
+  }
   renderHome();
 }
 
@@ -600,9 +618,13 @@ function renderAdmin(){
   </div>`).join('');
 }
 
-function deletePost(id){
+async function deletePost(id){
   if(!confirm('Excluir este post?'))return;
-  savePosts(getPosts().filter(p=>p.id!==id));renderAdmin();
+  if(isPublishing)return;
+  isPublishing=true;
+  await savePosts(getPosts().filter(p=>p.id!==id));
+  isPublishing=false;
+  renderAdmin();
 }
 
 function editPost(id){
@@ -629,19 +651,27 @@ function editPost(id){
   window.scrollTo(0,0);
 }
 
-function updatePost(id){
+async function updatePost(id){
+  if(isPublishing)return;
   const title=document.getElementById('post-title').value.trim(),body=document.getElementById('post-body').value.trim();
   if(!title||!body){alert('Título e texto são obrigatórios!');return;}
   const posts=getPosts();
   const idx=posts.findIndex(p=>p.id===id);
   if(idx===-1)return;
   posts[idx]={...posts[idx],title,category:document.getElementById('post-category').value,summary:document.getElementById('post-summary').value.trim(),body,video:document.getElementById('post-video').value.trim(),images:uploadedImages.filter(Boolean)};
-  savePosts(posts);
+  isPublishing=true;
+  const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
+  btn.disabled=true;btn.style.opacity='.6';btn.textContent='⏳ Atualizando...';
+  const ok=await savePosts(posts);
+  btn.disabled=false;btn.style.opacity='';btn.textContent=originalText;
+  isPublishing=false;
   ['post-title','post-body','post-summary','post-video'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('imgs-preview-grid').innerHTML='';uploadedImages=[];
-  const msg=document.getElementById('success-msg');msg.style.display='block';setTimeout(()=>msg.style.display='none',3000);
-  msg.textContent='✓ Post atualizado com sucesso!';
-  setTimeout(()=>msg.textContent='✓ Post publicado com sucesso!',3500);
+  if(ok){
+    const msg=document.getElementById('success-msg');msg.style.display='block';setTimeout(()=>msg.style.display='none',3000);
+    msg.textContent='✓ Post atualizado com sucesso!';
+    setTimeout(()=>msg.textContent='✓ Post publicado com sucesso!',3500);
+  }
   renderHome();
 }
 
