@@ -76,7 +76,9 @@
       <div class="sidebar-widget">
         <div class="widget-content">
           <img src="images/promo-geovani.jpg" alt="Geovani Rodrigues" class="promo-widget-photo">
-          <div class="promo-widget-name">Geovani Rodrigues · Psicanalista Clínico</div>
+          <div class="promo-widget-name">Geovani Rodrigues</div>
+          <div class="promo-widget-author">Autor do Tempos Ridículos · Psicanalista Clínico</div>
+          <div class="promo-widget-divider"></div>
           <div class="promo-widget-headline">Tá tudo bem não estar bem o tempo todo.</div>
           <div class="promo-widget-text">Sua saúde mental importa. Atendimento online, com sigilo e acolhimento.</div>
           <a class="promo-widget-btn" href="https://wa.me/5519999612021?text=Oi%2C%20vi%20no%20blog%20e%20queria%20agendar%20uma%20sess%C3%A3o" target="_blank">Agendar uma sessão →</a>
@@ -100,7 +102,9 @@
       <div class="sidebar-widget">
         <div class="widget-content">
           <img src="images/promo-geovani.jpg" alt="Geovani Rodrigues" class="promo-widget-photo">
-          <div class="promo-widget-name">Geovani Rodrigues · Psicanalista Clínico</div>
+          <div class="promo-widget-name">Geovani Rodrigues</div>
+          <div class="promo-widget-author">Autor do Tempos Ridículos · Psicanalista Clínico</div>
+          <div class="promo-widget-divider"></div>
           <div class="promo-widget-headline">Tá tudo bem não estar bem o tempo todo.</div>
           <div class="promo-widget-text">Sua saúde mental importa. Atendimento online, com sigilo e acolhimento.</div>
           <a class="promo-widget-btn" href="https://wa.me/5519999612021?text=Oi%2C%20vi%20no%20blog%20e%20queria%20agendar%20uma%20sess%C3%A3o" target="_blank">Agendar uma sessão →</a>
@@ -482,7 +486,7 @@ function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').
 function buildPostPageHtml(post){
   const pageUrl=`${SITE_URL}/posts/${post.id}.html`;
   const imgs=(post.images||[]).map(s=>s.startsWith('http')?s:`../${s}`);
-  const ogImage=imgs.length?(imgs[0].startsWith('http')?imgs[0]:`${SITE_URL}/${post.images[0]}`):'';
+  const ogImage=imgs.length?(imgs[0].startsWith('http')?imgs[0]:`${SITE_URL}/${post.images[0]}`):`${SITE_URL}/images/og-default.jpg`;
   let videoHtml='';
   if(post.video){
     videoHtml=post.video.split('\n').map(s=>s.trim()).filter(Boolean).map(line=>{
@@ -667,7 +671,9 @@ ${ogImage?`<meta name="twitter:image" content="${ogImage}">`:''}
   <div class="sidebar-widget" style="margin-top:1.5rem;max-width:340px;margin-left:auto;margin-right:auto;">
     <div class="widget-content">
       <img src="../images/promo-geovani.jpg" alt="Geovani Rodrigues" class="promo-widget-photo">
-      <div class="promo-widget-name">Geovani Rodrigues · Psicanalista Clínico</div>
+      <div class="promo-widget-name">Geovani Rodrigues</div>
+      <div class="promo-widget-author">Autor do Tempos Ridículos · Psicanalista Clínico</div>
+      <div class="promo-widget-divider"></div>
       <div class="promo-widget-headline">Tá tudo bem não estar bem o tempo todo.</div>
       <div class="promo-widget-text">Sua saúde mental importa. Atendimento online, com sigilo e acolhimento.</div>
       <a class="promo-widget-btn" href="https://wa.me/5519999612021?text=Oi%2C%20vi%20no%20blog%20e%20queria%20agendar%20uma%20sess%C3%A3o" target="_blank">Agendar uma sessão →</a>
