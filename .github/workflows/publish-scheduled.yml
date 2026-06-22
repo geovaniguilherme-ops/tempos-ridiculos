@@ -1,0 +1,54 @@
+name: Publicar posts agendados
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # roda toda hora em ponto
+  workflow_dispatch:      # permite rodar manualmente também
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar e publicar posts agendados
+        run: |
+          python3 << 'PYEOF'
+          import json, datetime
+
+          agora = datetime.datetime.utcnow()
+          print(f"Verificando posts agendados em {agora.isoformat()}Z")
+
+          with open('data/posts.json', 'r', encoding='utf-8') as f:
+              posts = json.load(f)
+
+          houve_mudanca = False
+          for post in posts:
+              agendado_em = post.get('scheduledAt')
+              esta_arquivado = post.get('archived', False)
+              if agendado_em and esta_arquivado:
+                  dt_agendado = datetime.datetime.fromisoformat(agendado_em.replace('Z',''))
+                  if dt_agendado <= agora:
+                      print(f"Publicando agora: {post['title']}")
+                      post['archived'] = False
+                      post['scheduledAt'] = None
+                      houve_mudanca = True
+
+          if houve_mudanca:
+              with open('data/posts.json', 'w', encoding='utf-8') as f:
+                  json.dump(posts, f, ensure_ascii=False, indent=2)
+              print("posts.json atualizado com sucesso")
+          else:
+              print("Nenhum post agendado para publicar agora")
+          PYEOF
+
+      - name: Salvar mudanças no repositório
+        run: |
+          git config user.name "Bot do Tempos Ridículos"
+          git config user.email "bot@tempos-ridiculos"
+          git add data/posts.json
+          git diff --staged --quiet || git commit -m "Publicação automática de post agendado"
+          git push || echo "Nenhuma mudança para enviar"
