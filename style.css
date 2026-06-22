@@ -98,6 +98,8 @@
   .ql-toolbar.ql-snow{background:var(--paper);border-color:var(--border)!important;}
   .ql-container.ql-snow{border-color:var(--border)!important;min-height:300px;font-family:'Source Serif 4',serif;font-size:1rem;}
   .ql-editor{color:var(--ink);min-height:300px;}
+  .ql-editor p{margin-bottom:.6em;}
+  .ql-editor p:empty,.ql-editor p:has(> br:only-child){margin-bottom:.3em;}
   .ql-editor.ql-blank::before{color:var(--gray);font-style:italic;}
   .ql-snow .ql-stroke{stroke:var(--ink);}
   .ql-snow .ql-fill,.ql-snow .ql-stroke.ql-fill{fill:var(--ink);}
