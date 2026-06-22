@@ -636,9 +636,16 @@ function clearCoverImage(){
   document.getElementById('cover-preview').style.display='none';
   document.getElementById('cover-preview-img').src='';
 }
+function cleanQuillBody(html){
+  // Remove parágrafos vazios do início e do fim (artefatos do editor)
+  return (html||'')
+    .replace(/^(\s*<p[^>]*>\s*(<br\s*\/?>\s*)?<\/p>\s*)+/gi,'')
+    .replace(/(\s*<p[^>]*>\s*(<br\s*\/?>\s*)?<\/p>\s*)+$/gi,'')
+    .trim();
+}
 function getQuillBody(){
   const q=ensureQuillEditor();
-  if(q)return q.root.innerHTML.trim();
+  if(q)return cleanQuillBody(q.root.innerHTML.trim());
   const fb=document.getElementById('post-body-fallback');
   return fb?legacyTextToHtml(fb.value.trim()):'';
 }
