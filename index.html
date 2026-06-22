@@ -371,23 +371,42 @@ async function publishToGitHub(posts,retried){
   if(!token){alert('Sem token salvo — este post ficou só salvo neste navegador, não foi publicado de verdade.');return false;}
   try{
     const api=`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`;
-    let sha=null;
-    const head=await fetch(api,{headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json'}});
-    if(head.ok){const j=await head.json();sha=j.sha;}
-    else if(head.status===401||head.status===403){
-      if(retried){alert('Token do GitHub ainda inválido. Tente colar de novo.');return false;}
-      alert('Token do GitHub inválido ou expirado. Vou pedir um novo.');
-      localStorage.removeItem('tr_gh_token');
-      return publishToGitHub(posts,true);
+    // Sempre busca a versão mais recente do servidor antes de salvar
+    const head=await fetch(api,{headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json'},cache:'no-store'});
+    if(!head.ok){
+      if(head.status===401||head.status===403){
+        if(retried){alert('Token do GitHub ainda inválido. Tente colar de novo.');return false;}
+        alert('Token do GitHub inválido ou expirado. Vou pedir um novo.');
+        localStorage.removeItem('tr_gh_token');
+        return publishToGitHub(posts,true);
+      }
     }
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(posts,null,2))));
+    const serverMeta=head.ok?await head.json():null;
+    const sha=serverMeta?serverMeta.sha:null;
+    // Se o servidor tem conteúdo, faz merge: pega posts do servidor e sobrescreve/adiciona os que vieram do painel
+    let finalPosts=posts;
+    if(serverMeta&&serverMeta.content){
+      try{
+        const serverPosts=JSON.parse(decodeURIComponent(escape(atob(serverMeta.content.replace(/\n/g,'')))));
+        // Cria mapa dos posts do servidor por id
+        const serverMap=Object.fromEntries(serverPosts.map(p=>[p.id,p]));
+        // Sobrescreve com os posts locais (que têm as edições mais recentes)
+        posts.forEach(p=>{serverMap[p.id]=p;});
+        // Reconstrói mantendo a ordem: novos posts primeiro, depois antigos que não estavam no local
+        const localIds=new Set(posts.map(p=>p.id));
+        const extras=serverPosts.filter(p=>!localIds.has(p.id));
+        finalPosts=[...posts,...extras];
+      }catch(e){finalPosts=posts;}
+    }
+    _postsCache=finalPosts;
+    try{localStorage.setItem('tr_posts',JSON.stringify(finalPosts));}catch(e){}
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(finalPosts,null,2))));
     const body={message:'Atualiza posts via painel admin',content};
     if(sha)body.sha=sha;
     const put=await fetch(api,{method:'PUT',headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!put.ok){
       const err=await put.json().catch(()=>({}));
       if(put.status===409&&!retried){
-        // sha desatualizado (outra publicação em paralelo) — tenta de novo automaticamente
         return publishToGitHub(posts,true);
       }
       alert('Não consegui publicar de verdade no GitHub ('+(err.message||put.status)+'). O post ficou salvo só neste navegador por enquanto. Tente publicar de novo em alguns segundos.');
@@ -399,12 +418,7 @@ async function publishToGitHub(posts,retried){
     return false;
   }
 }
-async function savePosts(p){
-  _postsCache=p;
-  try{localStorage.setItem('tr_posts',JSON.stringify(p));}
-  catch(e){console.warn('Cache local cheio, pulando (isso não afeta a publicação de verdade):',e);}
-  return await publishToGitHub(p);
-}
+async function savePosts(p){return await publishToGitHub(p);}
 function getComments(id){try{return JSON.parse(localStorage.getItem('tr_cmts_'+id)||'[]');}catch(e){return[];}}
 function saveComments(id,c){localStorage.setItem('tr_cmts_'+id,JSON.stringify(c));}
 
