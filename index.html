@@ -199,6 +199,11 @@
         </div>
         <div id="cover-picker-modal" class="cover-picker-grid" style="display:none"></div>
       </div>
+      <div class="form-group">
+        <label>Agendamento (opcional — deixe em branco para publicar agora)</label>
+        <input type="datetime-local" id="post-schedule" style="background:var(--paper);color:var(--ink);border:1px solid var(--border);padding:.5rem;font-family:'Space Mono',monospace;font-size:.8rem;width:100%;box-sizing:border-box;">
+        <div style="font-size:.7rem;color:var(--gray);margin-top:.3rem">Horário de Brasília (UTC-3)</div>
+      </div>
       <button class="btn-publish" onclick="publishPost()">⚡ Publicar agora</button>
     </div>
     <div class="admin-panel" id="tab-posts">
@@ -1014,6 +1019,10 @@ async function publishPost(){
   const failures=await resolvePendingQuillImages();
   if(failures>0&&!confirm(failures+' imagem(ns) não terminaram de enviar pro servidor e vão ficar mais pesadas no post (em base64). Quer publicar assim mesmo?'))return;
   const body=getQuillBody();
+  const scheduleInput=document.getElementById('post-schedule').value;
+  // Converte horário de Brasília (UTC-3) pra UTC
+  const scheduledAt=scheduleInput?new Date(scheduleInput+'Z').toISOString().replace('Z','').split('.')[0]+'Z':null;
+  const scheduledAtUTC=scheduleInput?new Date(new Date(scheduleInput).getTime()+3*60*60*1000).toISOString():null;
   const post={
     id:'p'+Date.now(),title,
     category:document.getElementById('post-category').value,
@@ -1022,7 +1031,9 @@ async function publishPost(){
     images:uploadedImages.filter(Boolean),
     poll:getPollFromForm(),
     coverImage:selectedCoverImage,
-    date:new Date().toISOString()
+    date:scheduledAtUTC||new Date().toISOString(),
+    scheduledAt:scheduledAtUTC||null,
+    archived:scheduledAtUTC?true:false
   };
   isPublishing=true;
   const btn=document.querySelector('.btn-publish'),originalText=btn.textContent;
@@ -1043,7 +1054,7 @@ async function publishPost(){
     btn.disabled=false;btn.style.opacity='';btn.textContent=originalText;
     isPublishing=false;
   }
-  ['post-title','post-summary','post-video','post-poll-question','post-poll-options'].forEach(id=>document.getElementById(id).value='');
+  ['post-title','post-summary','post-video','post-poll-question','post-poll-options','post-schedule'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   if(quillEditor)quillEditor.setContents([]);
   const fb=document.getElementById('post-body-fallback');if(fb)fb.value='';
   document.getElementById('imgs-preview-grid').innerHTML='';
@@ -1071,7 +1082,7 @@ function renderAdmin(){
   if(posts.length===0){list.innerHTML='<div style="padding:2rem;text-align:center;color:var(--gray);font-style:italic">Nenhum post publicado ainda.</div>';return;}
   list.innerHTML=posts.map(p=>`<div class="admin-post-item${p.archived?' admin-post-archived':''}">
     <div class="admin-post-info">
-      <h4>${p.title}${p.archived?' <span class="archived-badge">📦 Arquivado</span>':''}</h4>
+      <h4>${p.title}${p.scheduledAt&&p.archived?' <span class="archived-badge">🕐 Agendado: '+new Date(p.scheduledAt).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+'</span>':p.archived?' <span class="archived-badge">📦 Arquivado</span>':''}</h4>
       <span>${p.category} · ${fmtDate(p.date)} · ${(p.images||[]).length} imagem(ns)</span>
     </div>
     <div class="admin-post-actions"><button class="btn-edit" onclick="editPost('${p.id}')">Editar</button><button class="btn-edit" onclick="toggleArchive('${p.id}')">${p.archived?'📤 Desarquivar':'📦 Arquivar'}</button><button class="btn-danger" onclick="deletePost('${p.id}')">Excluir</button></div>
