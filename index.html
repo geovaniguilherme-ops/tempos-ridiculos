@@ -300,14 +300,11 @@ function quillVideoHandler(){
   const videoId=youtubeToEmbed(url);
   if(!videoId){alert('Link do YouTube inválido. Use o formato: https://www.youtube.com/watch?v=...');return;}
   const range=q.getSelection(true)||{index:q.getLength()};
-  // Insere parágrafo vazio antes para separar o bloco
-  q.insertText(range.index,'\n');
-  // Insere como bloco HTML com thumbnail clicável e marcador de embed
+  const idx=range.index;
   const embedHtml=`<div class="ql-video-placeholder" data-videoid="${videoId}" contenteditable="false" style="position:relative;width:100%;padding-top:56.25%;background:#000;cursor:pointer;margin:1rem 0;" onclick="this.innerHTML='<iframe width=100% height=100% src=https://www.youtube.com/embed/${videoId}?autoplay=1 frameborder=0 allowfullscreen style=position:absolute;top:0;left:0;width:100%;height:100%;></iframe>';"><img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:.85;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:68px;height:48px;background:#ff0000;border-radius:12px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="32" height="32"><polygon points="9,7 19,12 9,17" fill="white"></polygon></svg></div></div>`;
-  // Insere via clipboard API do Quill para preservar HTML
   const delta=q.clipboard.convert({html:embedHtml});
-  q.updateContents(delta,'user');
-  q.setSelection(q.getLength());
+  q.insertContents(idx,delta,'user');
+  q.setSelection(idx+delta.length());
 }
 function quillImageHandler(){
   const input=document.createElement('input');
