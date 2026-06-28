@@ -522,15 +522,14 @@ function getBotToken(){
   }
   return t?t.trim():null;
 }
-const BOT_TOKEN=getBotToken();
 const GH_ISSUES_API='https://api.github.com/repos/geovaniguilherme-ops/tempos-ridiculos/issues';
 
 async function getOrCreateIssue(postId,postTitle){
   try{
-    const r=await fetch(`${GH_ISSUES_API}?labels=post-${postId}&state=open&per_page=1`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+    const r=await fetch(`${GH_ISSUES_API}?labels=post-${postId}&state=open&per_page=1`,{headers:{Authorization:'Bearer '+getBotToken(),Accept:'application/vnd.github+json'}});
     const issues=await r.json();
     if(issues.length>0)return issues[0].number;
-    const r2=await fetch(GH_ISSUES_API,{method:'POST',headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+    const r2=await fetch(GH_ISSUES_API,{method:'POST',headers:{Authorization:'Bearer '+getBotToken(),Accept:'application/vnd.github+json','Content-Type':'application/json'},
       body:JSON.stringify({title:`Comentários: ${postTitle}`,body:`Comentários do post: ${postTitle}\n\nhttps://geovaniguilherme-ops.github.io/tempos-ridiculos/posts/${postId}.html`,labels:[`post-${postId}`]})});
     const issue=await r2.json();
     return issue.number;
@@ -539,10 +538,10 @@ async function getOrCreateIssue(postId,postTitle){
 
 async function loadGithubComments(postId){
   try{
-    const r=await fetch(`${GH_ISSUES_API}?labels=post-${postId}&state=open&per_page=1`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+    const r=await fetch(`${GH_ISSUES_API}?labels=post-${postId}&state=open&per_page=1`,{headers:{Authorization:'Bearer '+getBotToken(),Accept:'application/vnd.github+json'}});
     const issues=await r.json();
     if(!issues.length)return[];
-    const r2=await fetch(`${GH_ISSUES_API}/${issues[0].number}/comments?per_page=100`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+    const r2=await fetch(`${GH_ISSUES_API}/${issues[0].number}/comments?per_page=100`,{headers:{Authorization:'Bearer '+getBotToken(),Accept:'application/vnd.github+json'}});
     const comments=await r2.json();
     return comments.map(c=>{
       const body=c.body||'';
@@ -557,7 +556,7 @@ async function addGithubComment(postId,postTitle,name,text){
   const issueNum=await getOrCreateIssue(postId,postTitle);
   if(!issueNum)throw new Error('Não foi possível conectar ao sistema de comentários.');
   const body=`**${name}**\n${text}`;
-  const r=await fetch(`${GH_ISSUES_API}/${issueNum}/comments`,{method:'POST',headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({body})});
+  const r=await fetch(`${GH_ISSUES_API}/${issueNum}/comments`,{method:'POST',headers:{Authorization:'Bearer '+getBotToken(),Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({body})});
   if(!r.ok)throw new Error('Erro ao publicar comentário.');
   return await r.json();
 }
@@ -1237,12 +1236,12 @@ async function loadNotifications(){
   const badge=document.getElementById('notif-badge');
   const list=document.getElementById('notif-list');
   try{
-    const r=await fetch(`${GH_ISSUES_API}?state=open&per_page=20&sort=updated&direction=desc`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+    const r=await fetch(`${GH_ISSUES_API}?state=open&per_page=20&sort=updated&direction=desc`,{headers:{Authorization:'Bearer '+getBotToken(),Accept:'application/vnd.github+json'}});
     const issues=await r.json();
     const lastSeen=localStorage.getItem('tr_notif_seen')||'1970-01-01T00:00:00Z';
     let newCount=0;
     const items=await Promise.all(issues.map(async issue=>{
-      const r2=await fetch(`${GH_ISSUES_API}/${issue.number}/comments?per_page=5&sort=created&direction=desc`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+      const r2=await fetch(`${GH_ISSUES_API}/${issue.number}/comments?per_page=5&sort=created&direction=desc`,{headers:{Authorization:'Bearer '+getBotToken(),Accept:'application/vnd.github+json'}});
       const comments=await r2.json();
       const postTitle=issue.title.replace('Comentários: ','');
       return comments.map(c=>{
