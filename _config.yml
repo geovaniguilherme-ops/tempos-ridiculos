@@ -1,0 +1,10 @@
+include:
+  - sitemap.xml
+  - robots.txt
+  - google5259dacfc97b39e0.html
+
+defaults:
+  - scope:
+      path: "sitemap.xml"
+    values:
+      sitemap: false
