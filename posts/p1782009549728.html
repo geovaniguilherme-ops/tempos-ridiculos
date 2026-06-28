@@ -146,32 +146,65 @@
     <div class="comment-form">
       <input type="text" id="cmt-name" placeholder="Seu nome">
       <textarea id="cmt-text" placeholder="Deixe seu comentário..."></textarea>
-      <button class="btn-comment" onclick="addComment()">Publicar comentário</button>
+      <button class="btn-comment" id="btn-cmt-submit" onclick="addComment()">Publicar comentário</button>
     </div>
-    <div id="cmt-list"></div>
+    <div id="cmt-list"><p style="color:var(--gray);font-style:italic;font-size:.9rem">Carregando comentários...</p></div>
   </div>
 </div>
 <footer class="site-footer">
   <div class="footer-copy">© 2025 Tempos Ridículos · Todos os direitos reservados</div>
 </footer>
 <script>
+const _POST_ID='p1782009549728';
+const _POST_TITLE="O VOTO DE MINERVA: A verdadeira reforma política.";
+const _GH_API='https://api.github.com/repos/geovaniguilherme-ops/tempos-ridiculos/issues';
+function _getBotToken(){
+  let t=localStorage.getItem('tr_bot_token');
+  if(!t){t=prompt('Cole o token do bot de comentários:');if(t)localStorage.setItem('tr_bot_token',t.trim());}
+  return t?t.trim():null;
+}
 function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function fmtDate2(iso){return new Date(iso).toLocaleDateString('pt-BR',{day:'numeric',month:'short',year:'numeric'});}
-function getCmts(){try{return JSON.parse(localStorage.getItem('tr_cmts_p1782009549728')||'[]');}catch(e){return[];}}
-function saveCmts(c){localStorage.setItem('tr_cmts_p1782009549728',JSON.stringify(c));}
-function renderCmts(){
-  const list=getCmts();
-  document.getElementById('cmt-list').innerHTML=list.length?list.map(c=>'<div class="comment-item"><div class="comment-author">'+escapeHtml(c.name)+'</div><div class="comment-date">'+fmtDate2(c.date)+'</div><div class="comment-text">'+escapeHtml(c.text)+'</div></div>').join(''):'<p style="color:var(--gray);font-style:italic;font-size:.9rem">Nenhum comentário ainda. Seja o primeiro!</p>';
+function renderCmts(comments){
+  const list=document.getElementById('cmt-list');
+  if(!comments.length){list.innerHTML='<p style="color:var(--gray);font-style:italic;font-size:.9rem">Nenhum comentário ainda. Seja o primeiro!</p>';return;}
+  list.innerHTML=comments.map(c=>'<div class="comment-item"><div class="comment-author">'+escapeHtml(c.name)+'</div><div class="comment-date">'+fmtDate2(c.date)+'</div><div class="comment-text">'+escapeHtml(c.text)+'</div></div>').join('');
 }
-function addComment(){
-  const name=document.getElementById('cmt-name').value.trim()||'Anônimo';
+async function loadCmts(){
+  const t=_getBotToken();if(!t)return;
+  const r=await fetch(_GH_API+'?labels=post-'+_POST_ID+'&state=open&per_page=1',{headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json'}});
+  const issues=await r.json();
+  if(!issues.length){renderCmts([]);return;}
+  const r2=await fetch(_GH_API+'/'+issues[0].number+'/comments?per_page=100',{headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json'}});
+  const cmts=await r2.json();
+  renderCmts(cmts.map(c=>{const m=(c.body||'').match(/^\*\*(.+?)\*\*/);const text=(c.body||'').replace(/^\*\*.+?\*\*\n/,'');return{name:m?m[1]:'Anônimo',text,date:c.created_at};}));
+}
+async function addComment(){
+  const name=document.getElementById('cmt-name').value.trim();
   const text=document.getElementById('cmt-text').value.trim();
   if(!text)return;
-  const list=getCmts();list.push({name,text,date:new Date().toISOString()});saveCmts(list);
-  document.getElementById('cmt-name').value='';document.getElementById('cmt-text').value='';
-  renderCmts();
+  const btn=document.getElementById('btn-cmt-submit');
+  btn.disabled=true;btn.textContent='Publicando...';
+  const t=_getBotToken();
+  if(!t){btn.disabled=false;btn.textContent='Publicar comentário';return;}
+  try{
+    const r=await fetch(_GH_API+'?labels=post-'+_POST_ID+'&state=open&per_page=1',{headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json'}});
+    const issues=await r.json();
+    let issueNum;
+    if(issues.length){issueNum=issues[0].number;}
+    else{
+      const r2=await fetch(_GH_API,{method:'POST',headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+        body:JSON.stringify({title:'Comentários: '+_POST_TITLE,body:'Comentários do post: '+_POST_TITLE,labels:['post-'+_POST_ID]})});
+      issueNum=(await r2.json()).number;
+    }
+    await fetch(_GH_API+'/'+issueNum+'/comments',{method:'POST',headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({body:'**'+(name||'Anônimo')+'**\n'+text})});
+    document.getElementById('cmt-name').value='';document.getElementById('cmt-text').value='';
+    await loadCmts();
+  }catch(e){alert('Erro ao publicar. Tente de novo.');}
+  finally{btn.disabled=false;btn.textContent='Publicar comentário';}
 }
-renderCmts();
+loadCmts();
 function updateReadingProgress(){
   const h=document.documentElement;
   const scrolled=h.scrollTop;
