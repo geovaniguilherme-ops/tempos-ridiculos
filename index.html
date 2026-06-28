@@ -133,7 +133,16 @@
 <div id="page-admin" class="page">
   <div class="admin-page">
     <div class="admin-header">
-      <h2>Painel do Editor</h2>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <h2>Painel do Editor</h2>
+        <div id="notif-bell" title="Notificações" onclick="toggleNotifPanel()" style="cursor:pointer;position:relative;font-size:1.4rem;user-select:none">
+          🔔<span id="notif-badge" style="display:none;position:absolute;top:-6px;right:-8px;background:var(--red);color:#fff;font-size:.6rem;font-family:'Space Mono',monospace;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;"></span>
+        </div>
+      </div>
+      <div id="notif-panel" style="display:none;position:absolute;top:5rem;left:2rem;right:2rem;background:var(--paper);border:1px solid var(--border);padding:1.2rem;z-index:1000;max-height:400px;overflow-y:auto;">
+        <div style="font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1rem;color:var(--gold)">Atividade recente</div>
+        <div id="notif-list">Carregando...</div>
+      </div>
       <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
         <a href="https://geovaniguilherme-ops.github.io/tempos-ridiculos/" target="_blank" class="back-btn" style="text-decoration:none">👁 Ver blog publicado</a>
         <div class="back-btn" onclick="showPage('home')">← Voltar ao site</div>
@@ -505,6 +514,54 @@ async function publishToGitHub(posts,retried){
   }
 }
 async function savePosts(p){return await publishToGitHub(p);}
+function getBotToken(){
+  let t=localStorage.getItem('tr_bot_token');
+  if(!t){
+    t=prompt('Cole o token do bot de comentários (só precisa fazer isso uma vez neste navegador):');
+    if(t)localStorage.setItem('tr_bot_token',t.trim());
+  }
+  return t?t.trim():null;
+}
+const BOT_TOKEN=getBotToken();
+const GH_ISSUES_API='https://api.github.com/repos/geovaniguilherme-ops/tempos-ridiculos/issues';
+
+async function getOrCreateIssue(postId,postTitle){
+  try{
+    const r=await fetch(`${GH_ISSUES_API}?labels=post-${postId}&state=open&per_page=1`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+    const issues=await r.json();
+    if(issues.length>0)return issues[0].number;
+    const r2=await fetch(GH_ISSUES_API,{method:'POST',headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({title:`Comentários: ${postTitle}`,body:`Comentários do post: ${postTitle}\n\nhttps://geovaniguilherme-ops.github.io/tempos-ridiculos/posts/${postId}.html`,labels:[`post-${postId}`]})});
+    const issue=await r2.json();
+    return issue.number;
+  }catch(e){return null;}
+}
+
+async function loadGithubComments(postId){
+  try{
+    const r=await fetch(`${GH_ISSUES_API}?labels=post-${postId}&state=open&per_page=1`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+    const issues=await r.json();
+    if(!issues.length)return[];
+    const r2=await fetch(`${GH_ISSUES_API}/${issues[0].number}/comments?per_page=100`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+    const comments=await r2.json();
+    return comments.map(c=>{
+      const body=c.body||'';
+      const nameMatch=body.match(/^\*\*(.+?)\*\*/);
+      const text=body.replace(/^\*\*.+?\*\*\n/,'');
+      return{name:nameMatch?nameMatch[1]:'Anônimo',text,date:c.created_at,id:c.id};
+    });
+  }catch(e){return[];}
+}
+
+async function addGithubComment(postId,postTitle,name,text){
+  const issueNum=await getOrCreateIssue(postId,postTitle);
+  if(!issueNum)throw new Error('Não foi possível conectar ao sistema de comentários.');
+  const body=`**${name}**\n${text}`;
+  const r=await fetch(`${GH_ISSUES_API}/${issueNum}/comments`,{method:'POST',headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({body})});
+  if(!r.ok)throw new Error('Erro ao publicar comentário.');
+  return await r.json();
+}
+
 function getComments(id){try{return JSON.parse(localStorage.getItem('tr_cmts_'+id)||'[]');}catch(e){return[];}}
 function saveComments(id,c){localStorage.setItem('tr_cmts_'+id,JSON.stringify(c));}
 
@@ -519,7 +576,7 @@ function showPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   if(page==='home'){currentFilter=null;renderHome();}
-  if(page==='admin'){renderAdmin();ensureQuillEditor();}
+  if(page==='admin'){renderAdmin();ensureQuillEditor();loadNotifications();}
   window.scrollTo(0,0);
 }
 
@@ -652,27 +709,46 @@ function openPost(id){
       <div class="comment-form">
         <input type="text" id="cmt-name" placeholder="Seu nome">
         <textarea id="cmt-text" placeholder="Deixe seu comentário..."></textarea>
-        <button class="btn-comment" onclick="addComment('${id}')">Publicar comentário</button>
+        <button class="btn-comment" id="btn-comment-${id}" onclick="addComment('${id}',this.dataset.title)" data-title="${escAttr(post.title)}">Publicar comentário</button>
       </div>
-      <div class="comment-list" id="cmt-list-${id}">${cmtHtml}</div>
+      <div class="comment-list" id="cmt-list-${id}"><p style="color:var(--gray);font-style:italic;font-size:.9rem">Carregando comentários...</p></div>
     </div>`;
   renderSidebar();showPage('post');
+  loadGithubComments(id).then(comments=>{
+    const list=document.getElementById('cmt-list-'+id);
+    if(!list)return;
+    if(comments.length===0){list.innerHTML='<p style="color:var(--gray);font-style:italic;font-size:.9rem">Nenhum comentário ainda. Seja o primeiro!</p>';return;}
+    list.innerHTML=comments.map(c=>`
+      <div class="comment-item">
+        <div class="comment-author">${c.name}</div>
+        <div class="comment-date">${fmtDate(c.date)}</div>
+        <div class="comment-text">${c.text}</div>
+      </div>`).join('');
+  });
 }
 
-function addComment(postId){
+async function addComment(postId,postTitle){
   const name=document.getElementById('cmt-name').value.trim(),text=document.getElementById('cmt-text').value.trim();
   if(!name||!text){alert('Preencha seu nome e comentário!');return;}
-  const comments=getComments(postId);
-  comments.push({name,text,date:new Date().toISOString()});
-  saveComments(postId,comments);
-  document.getElementById('cmt-name').value='';
-  document.getElementById('cmt-text').value='';
-  document.getElementById('cmt-list-'+postId).innerHTML=comments.map(c=>`
-    <div class="comment-item">
-      <div class="comment-author">${c.name}</div>
-      <div class="comment-date">${fmtDate(c.date)}</div>
-      <div class="comment-text">${c.text}</div>
-    </div>`).join('');
+  const btn=document.getElementById('btn-comment-'+postId);
+  if(btn){btn.disabled=true;btn.textContent='Publicando...';}
+  try{
+    await addGithubComment(postId,postTitle,name,text);
+    document.getElementById('cmt-name').value='';
+    document.getElementById('cmt-text').value='';
+    const comments=await loadGithubComments(postId);
+    const list=document.getElementById('cmt-list-'+postId);
+    if(list)list.innerHTML=comments.map(c=>`
+      <div class="comment-item">
+        <div class="comment-author">${c.name}</div>
+        <div class="comment-date">${fmtDate(c.date)}</div>
+        <div class="comment-text">${c.text}</div>
+      </div>`).join('');
+  }catch(e){
+    alert('Não foi possível publicar o comentário. Tente de novo em alguns segundos.');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Publicar comentário';}
+  }
 }
 
 function looksLikeHtml(s){return /<[a-z][\s\S]*>/i.test(s||'');}
@@ -1155,6 +1231,46 @@ function switchTab(tab,el){
   document.getElementById('tab-posts').classList.toggle('active',tab==='posts');
   if(tab==='posts')renderAdmin();
   if(tab==='novo')ensureQuillEditor();
+}
+
+async function loadNotifications(){
+  const badge=document.getElementById('notif-badge');
+  const list=document.getElementById('notif-list');
+  try{
+    const r=await fetch(`${GH_ISSUES_API}?state=open&per_page=20&sort=updated&direction=desc`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+    const issues=await r.json();
+    const lastSeen=localStorage.getItem('tr_notif_seen')||'1970-01-01T00:00:00Z';
+    let newCount=0;
+    const items=await Promise.all(issues.map(async issue=>{
+      const r2=await fetch(`${GH_ISSUES_API}/${issue.number}/comments?per_page=5&sort=created&direction=desc`,{headers:{Authorization:'Bearer '+BOT_TOKEN,Accept:'application/vnd.github+json'}});
+      const comments=await r2.json();
+      const postTitle=issue.title.replace('Comentários: ','');
+      return comments.map(c=>{
+        const isNew=c.created_at>lastSeen;
+        if(isNew)newCount++;
+        const nameMatch=(c.body||'').match(/^\*\*(.+?)\*\*/);
+        const name=nameMatch?nameMatch[1]:'Anônimo';
+        return{date:c.created_at,name,postTitle,isNew};
+      });
+    }));
+    const flat=items.flat().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
+    if(badge){if(newCount>0){badge.style.display='flex';badge.textContent=newCount;}else{badge.style.display='none';}}
+    if(list){
+      if(flat.length===0){list.innerHTML='<p style="color:var(--gray);font-size:.85rem">Nenhuma atividade ainda.</p>';return;}
+      list.innerHTML=flat.map(n=>`
+        <div style="padding:.6rem 0;border-bottom:1px solid var(--border);${n.isNew?'color:var(--gold)':''}">
+          <div style="font-size:.75rem;font-family:\'Space Mono\',monospace">${n.isNew?'🆕 ':''}<strong>${n.name}</strong> comentou</div>
+          <div style="font-size:.8rem;color:var(--gray)">${n.postTitle.substring(0,50)} · ${fmtDate(n.date)}</div>
+        </div>`).join('');
+    }
+  }catch(e){if(list)list.innerHTML='<p style="color:var(--gray);font-size:.85rem">Erro ao carregar notificações.</p>';}
+}
+
+function toggleNotifPanel(){
+  const panel=document.getElementById('notif-panel');
+  const isOpen=panel.style.display==='block';
+  panel.style.display=isOpen?'none':'block';
+  if(!isOpen){localStorage.setItem('tr_notif_seen',new Date().toISOString());const badge=document.getElementById('notif-badge');if(badge)badge.style.display='none';}
 }
 
 function renderAdmin(){
