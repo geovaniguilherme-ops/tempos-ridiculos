@@ -271,12 +271,12 @@ function ensureQuillEditor(){
             ['bold','italic','underline','strike'],
             [{color:[]},{background:[]}],
             [{align:[]}],
-            ['blockquote','link','image'],
+            ['blockquote','link','image','video'],
             [{list:'ordered'},{list:'bullet'}],
             [{indent:'-1'},{indent:'+1'}],
             ['clean']
           ],
-          handlers:{image:quillImageHandler}
+          handlers:{image:quillImageHandler,video:quillVideoHandler}
         },
         imageResize:typeof ImageResize!=='undefined'?{}:undefined
       }
@@ -288,6 +288,21 @@ function ensureQuillEditor(){
   return quillEditor;
 }
 let pendingImageUploads={};
+function youtubeToEmbed(url){
+  const m=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/);
+  return m?`https://www.youtube.com/embed/${m[1]}`:null;
+}
+function quillVideoHandler(){
+  const q=ensureQuillEditor();
+  if(!q)return;
+  const url=prompt('Cole o link do YouTube:');
+  if(!url)return;
+  const embedUrl=youtubeToEmbed(url);
+  if(!embedUrl){alert('Link do YouTube inválido. Use o formato: https://www.youtube.com/watch?v=...');return;}
+  const range=q.getSelection(true)||{index:q.getLength()};
+  q.insertEmbed(range.index,'video',embedUrl);
+  q.setSelection(range.index+1);
+}
 function quillImageHandler(){
   const input=document.createElement('input');
   input.setAttribute('type','file');
