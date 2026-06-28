@@ -356,16 +356,18 @@ function youtubeToEmbed(url){
 function quillVideoHandler(){
   const q=ensureQuillEditor();
   if(!q)return;
+  // IMPORTANTE: salva cursor ANTES do prompt (o prompt rouba o foco e perde a posição)
+  const savedRange=q.getSelection()||{index:q.getLength(),length:0};
   const url=prompt('Cole o link do YouTube:');
   if(!url)return;
   const videoId=youtubeToEmbed(url);
   if(!videoId){alert('Link do YouTube inválido. Use o formato: https://www.youtube.com/watch?v=...');return;}
-  const range=q.getSelection(true)||{index:q.getLength()};
-  const idx=range.index;
-  const embedHtml=`<div class="ql-video-placeholder" data-videoid="${videoId}" contenteditable="false" style="position:relative;width:100%;padding-top:56.25%;background:#000;cursor:pointer;margin:1rem 0;" onclick="this.innerHTML='<iframe width=100% height=100% src=https://www.youtube.com/embed/${videoId}?autoplay=1 frameborder=0 allowfullscreen style=position:absolute;top:0;left:0;width:100%;height:100%;></iframe>';"><img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:.85;"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:68px;height:48px;background:#ff0000;border-radius:12px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="32" height="32"><polygon points="9,7 19,12 9,17" fill="white"></polygon></svg></div></div>`;
-  const delta=q.clipboard.convert({html:embedHtml});
-  q.insertContents(idx,delta,'user');
-  q.setSelection(idx+delta.length());
+  const idx=savedRange.index;
+  const embedUrl=`https://www.youtube.com/embed/${videoId}`;
+  // Insere usando o formato nativo do Quill (gera iframe.ql-video no HTML final)
+  q.insertEmbed(idx,'video',embedUrl,'user');
+  q.insertText(idx+1,'\n','user');
+  q.setSelection(idx+2,'user');
 }
 function quillImageHandler(){
   const input=document.createElement('input');
@@ -735,11 +737,8 @@ function clearCoverImage(){
   document.getElementById('cover-preview-img').src='';
 }
 function cleanQuillBody(html){
-  // Converte placeholders de video do editor em iframes de verdade
-  let h=(html||'').replace(/<div[^>]*class="ql-video-placeholder"[^>]*data-videoid="([A-Za-z0-9_-]{11})"[^>]*>[\s\S]*?<\/div>/gi,
-    (_,id)=>`<div class="video-wrapper"><iframe src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen class="ql-video"></iframe></div>`);
   // Remove parágrafos vazios do início e do fim (artefatos do editor)
-  return h
+  return (html||'')
     .replace(/^(\s*<p[^>]*>\s*(<br\s*\/?>\s*)?<\/p>\s*)+/gi,'')
     .replace(/(\s*<p[^>]*>\s*(<br\s*\/?>\s*)?<\/p>\s*)+$/gi,'')
     .trim();
