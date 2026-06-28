@@ -281,6 +281,8 @@ function ensureQuillEditor(){
         imageResize:typeof ImageResize!=='undefined'?{}:undefined
       }
     });
+    // Barra de posicionamento de imagem (aparece ao clicar)
+    setupImagePositionToolbar(quillEditor);
   }catch(e){
     console.error('Erro ao iniciar o editor de texto:',e);
     showQuillFallback();
@@ -288,6 +290,65 @@ function ensureQuillEditor(){
   return quillEditor;
 }
 let pendingImageUploads={};
+
+function setupImagePositionToolbar(q){
+  // Cria a barra flutuante
+  const bar=document.createElement('div');
+  bar.id='img-pos-bar';
+  bar.innerHTML=`
+    <button title="Flutuar à esquerda" onclick="setImgAlign('left')">◧ Esquerda</button>
+    <button title="Centralizar" onclick="setImgAlign('center')">▣ Centro</button>
+    <button title="Flutuar à direita" onclick="setImgAlign('right')">◨ Direita</button>
+    <button title="Remover alinhamento" onclick="setImgAlign('none')">✕</button>`;
+  document.body.appendChild(bar);
+  // Mostra a barra ao clicar em imagem no editor
+  q.root.addEventListener('click',e=>{
+    const img=e.target.closest('img');
+    if(img&&q.root.contains(img)){
+      window._selectedEditorImg=img;
+      const rect=img.getBoundingClientRect();
+      bar.style.display='flex';
+      bar.style.top=(rect.top+window.scrollY-44)+'px';
+      bar.style.left=(rect.left+window.scrollX)+'px';
+    } else if(!e.target.closest('#img-pos-bar')){
+      bar.style.display='none';
+      window._selectedEditorImg=null;
+    }
+  });
+  document.addEventListener('scroll',()=>{
+    if(window._selectedEditorImg){
+      const rect=window._selectedEditorImg.getBoundingClientRect();
+      bar.style.top=(rect.top+window.scrollY-44)+'px';
+      bar.style.left=(rect.left+window.scrollX)+'px';
+    }
+  });
+}
+
+function setImgAlign(align){
+  const img=window._selectedEditorImg;
+  if(!img||!quillEditor)return;
+  // Aplica o alinhamento ao parágrafo que contém a imagem
+  const blot=quillEditor.constructor.find(img);
+  if(blot){
+    const index=quillEditor.getIndex(blot);
+    if(align==='none'){
+      quillEditor.format('align',false);
+      // Remove inline float
+      img.style.float='';img.style.marginLeft='';img.style.marginRight='';
+    } else {
+      quillEditor.setSelection(index,0,'silent');
+      quillEditor.format('align',align==='center'?'center':align==='right'?'right':false);
+    }
+  }
+  // Aplica inline para garantia visual imediata
+  if(align==='left'){img.style.float='left';img.style.marginRight='1.2em';img.style.marginLeft='0';}
+  else if(align==='right'){img.style.float='right';img.style.marginLeft='1.2em';img.style.marginRight='0';}
+  else if(align==='center'){img.style.float='none';img.style.display='block';img.style.marginLeft='auto';img.style.marginRight='auto';}
+  else{img.style.float='';img.style.marginLeft='';img.style.marginRight='';}
+  document.getElementById('img-pos-bar').style.display='none';
+  window._selectedEditorImg=null;
+}
+
 function youtubeToEmbed(url){
   const m=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/);
   return m?m[1]:null;
