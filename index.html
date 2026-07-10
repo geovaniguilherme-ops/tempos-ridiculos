@@ -27,6 +27,80 @@
   <button id="tr-music-toggle" style="display:flex;align-items:center;gap:6px;background:var(--paper,#131110);border:1px solid var(--gold,#c9a84c);color:var(--gold,#c9a84c);border-radius:20px;padding:6px 12px;font-size:.7rem;font-family:'Space Mono',monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);">
     <span id="tr-music-icon">🎵</span><span id="tr-music-label">Trilha</span>
   </button>
+  <audio id="tr-music-audio" src="audio/trilha.mp3" loop preload="auto"></audio>
+</div>
+<script>
+(function(){
+  var audio = document.getElementById('tr-music-audio');
+  var btn = document.getElementById('tr-music-toggle');
+  var icon = document.getElementById('tr-music-icon');
+  var label = document.getElementById('tr-music-label');
+  var playing = false;
+  audio.volume = 0.25;
+
+  function setPlayingUI(isPlaying){
+    playing = isPlaying;
+    icon.textContent = isPlaying ? '⏸' : '🎵';
+    label.textContent = isPlaying ? 'Tocando' : 'Trilha';
+  }
+
+  function tryAutoplay(){
+    var p = audio.play();
+    if(p && p.then){
+      p.then(function(){ setPlayingUI(true); }).catch(function(){
+        // bloqueado pelo navegador — toca no primeiro clique/toque
+        var startOnInteraction = function(){
+          audio.play().then(function(){ setPlayingUI(true); }).catch(function(){});
+          document.removeEventListener('click', startOnInteraction);
+          document.removeEventListener('touchstart', startOnInteraction);
+        };
+        document.addEventListener('click', startOnInteraction, {once:true});
+        document.addEventListener('touchstart', startOnInteraction, {once:true});
+      });
+    }
+  }
+  tryAutoplay();
+
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    if(playing){
+      audio.pause();
+      setPlayingUI(false);
+    } else {
+      audio.play().then(function(){ setPlayingUI(true); }).catch(function(){});
+    }
+  });
+})();
+</script>
+
+`;
+  }
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escAttr(post.title)} — Tempos Ridículos</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="description" content="${escAttr(post.summary||'')}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="${escAttr(post.title)}">
+<meta property="og:description" content="${escAttr(post.summary||'')}">
+<meta property="og:url" content="${pageUrl}">
+${ogImage?`<meta property="og:image" content="${ogImage}">`:''}
+<meta name="twitter:card" content="${ogImage?'summary_large_image':'summary'}">
+<meta name="twitter:title" content="${escAttr(post.title)}">
+<meta name="twitter:description" content="${escAttr(post.summary||'')}">
+${ogImage?`<meta name="twitter:image" content="${ogImage}">`:''}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tr_theme')||'dark');<\/script>
+</head>
+<body>
+<div id="tr-music-player" style="position:fixed;top:12px;right:12px;z-index:10000;">
+  <button id="tr-music-toggle" style="display:flex;align-items:center;gap:6px;background:var(--paper,#131110);border:1px solid var(--gold,#c9a84c);color:var(--gold,#c9a84c);border-radius:20px;padding:6px 12px;font-size:.7rem;font-family:'Space Mono',monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);">
+    <span id="tr-music-icon">🎵</span><span id="tr-music-label">Trilha</span>
+  </button>
   <audio id="tr-music-audio" src="../audio/trilha.mp3" loop preload="auto"></audio>
 </div>
 <script>
@@ -72,58 +146,7 @@
   });
 })();
 <\/script>
-`;
-  }
-  return `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escAttr(post.title)} — Tempos Ridículos</title>
-<link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<meta name="description" content="${escAttr(post.summary||'')}">
-<meta property="og:type" content="article">
-<meta property="og:title" content="${escAttr(post.title)}">
-<meta property="og:description" content="${escAttr(post.summary||'')}">
-<meta property="og:url" content="${pageUrl}">
-${ogImage?`<meta property="og:image" content="${ogImage}">`:''}
-<meta name="twitter:card" content="${ogImage?'summary_large_image':'summary'}">
-<meta name="twitter:title" content="${escAttr(post.title)}">
-<meta name="twitter:description" content="${escAttr(post.summary||'')}">
-${ogImage?`<meta name="twitter:image" content="${ogImage}">`:''}
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css">
-<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tr_theme')||'dark');<\/script>
-</head>
-<body>
-<div id="tr-music-player" style="position:fixed;top:12px;right:12px;z-index:10000;">
-  <button id="tr-music-toggle" style="display:flex;align-items:center;gap:6px;background:var(--paper,#131110);border:1px solid var(--gold,#c9a84c);color:var(--gold,#c9a84c);border-radius:20px;padding:6px 12px;font-size:.7rem;font-family:'Space Mono',monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);">
-    <span id="tr-music-icon">🎵</span><span id="tr-music-label">Trilha</span>
-  </button>
-  <audio id="tr-music-audio" src="../audio/trilha.mp3" loop preload="none"></audio>
-</div>
-<script>
-(function(){
-  var audio = document.getElementById('tr-music-audio');
-  var btn = document.getElementById('tr-music-toggle');
-  var icon = document.getElementById('tr-music-icon');
-  var label = document.getElementById('tr-music-label');
-  var playing = false;
-  btn.addEventListener('click', function(){
-    if(playing){
-      audio.pause();
-      icon.textContent = '🎵';
-      label.textContent = 'Trilha';
-      playing = false;
-    } else {
-      audio.play().catch(function(){});
-      icon.textContent = '⏸';
-      label.textContent = 'Tocando';
-      playing = true;
-    }
-  });
-})();
-<\/script>
+
 
 <div class="reading-progress-bar" id="reading-progress"></div>
 <header class="site-header">
