@@ -19,6 +19,35 @@
 <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tr_theme')||'dark');</script>
 </head>
 <body>
+<div id="tr-music-player" style="position:fixed;top:12px;right:12px;z-index:10000;">
+  <button id="tr-music-toggle" style="display:flex;align-items:center;gap:6px;background:var(--paper,#131110);border:1px solid var(--gold,#c9a84c);color:var(--gold,#c9a84c);border-radius:20px;padding:6px 12px;font-size:.7rem;font-family:'Space Mono',monospace;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);">
+    <span id="tr-music-icon">🎵</span><span id="tr-music-label">Trilha</span>
+  </button>
+  <audio id="tr-music-audio" src="../audio/trilha.mp3" loop preload="none"></audio>
+</div>
+<script>
+(function(){
+  var audio = document.getElementById('tr-music-audio');
+  var btn = document.getElementById('tr-music-toggle');
+  var icon = document.getElementById('tr-music-icon');
+  var label = document.getElementById('tr-music-label');
+  var playing = false;
+  btn.addEventListener('click', function(){
+    if(playing){
+      audio.pause();
+      icon.textContent = '🎵';
+      label.textContent = 'Trilha';
+      playing = false;
+    } else {
+      audio.play().catch(function(){});
+      icon.textContent = '⏸';
+      label.textContent = 'Tocando';
+      playing = true;
+    }
+  });
+})();
+</script>
+
 <header class="site-header">
   <a href="../index.html" style="text-decoration:none;color:var(--ink)"><div class="site-title">Tempos Ridículos</div></a>
 </header>
