@@ -1,15 +1,15 @@
 [
   {
-    "id": "p1783646631770",
+    "id": "p1783646766732",
     "title": "A pergunta de 1.000.000 de dólares",
     "category": "Cotidiano",
     "summary": "A pergunta seria: Como a decisão de um povo infantilizado pode ser tão devastadora?",
-    "body": "<p><img src=\"https://geovaniguilherme-ops.github.io/tempos-ridiculos/images/inline-1783646587415.png\" width=\"595\" height=\"324\"></p><p><br></p><p>Como pode?</p>",
+    "body": "<p>Como pode?</p><p><br></p><p><img src=\"https://geovaniguilherme-ops.github.io/tempos-ridiculos/images/inline-1783646756182.png\" width=\"622\" height=\"341\"></p>",
     "video": "",
     "images": [],
     "poll": null,
-    "coverImage": "https://geovaniguilherme-ops.github.io/tempos-ridiculos/images/inline-1783646587415.png",
-    "date": "2026-07-10T01:23:51.770Z",
+    "coverImage": "https://geovaniguilherme-ops.github.io/tempos-ridiculos/images/inline-1783646756182.png",
+    "date": "2026-07-10T01:26:06.732Z",
     "scheduledAt": null,
     "archived": false
   },
@@ -254,5 +254,19 @@
       "images/p1782000122371-0.jpg"
     ],
     "date": "2026-06-21T00:02:02.372Z"
+  },
+  {
+    "id": "p1783646631770",
+    "title": "A pergunta de 1.000.000 de dólares",
+    "category": "Cotidiano",
+    "summary": "A pergunta seria: Como a decisão de um povo infantilizado pode ser tão devastadora?",
+    "body": "<p><img src=\"https://geovaniguilherme-ops.github.io/tempos-ridiculos/images/inline-1783646587415.png\" width=\"595\" height=\"324\"></p><p><br></p><p>Como pode?</p>",
+    "video": "",
+    "images": [],
+    "poll": null,
+    "coverImage": "https://geovaniguilherme-ops.github.io/tempos-ridiculos/images/inline-1783646587415.png",
+    "date": "2026-07-10T01:23:51.770Z",
+    "scheduledAt": null,
+    "archived": false
   }
 ]
