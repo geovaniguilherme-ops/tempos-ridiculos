@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A pergunta de 1.000.000 de dólares — Tempos Ridículos</title>
+<link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<meta name="description" content="A pergunta seria: Como a decisão de um povo infantilizado pode ser tão devastadora?">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A pergunta de 1.000.000 de dólares">
+<meta property="og:description" content="A pergunta seria: Como a decisão de um povo infantilizado pode ser tão devastadora?">
+<meta property="og:url" content="https://geovaniguilherme-ops.github.io/tempos-ridiculos/posts/p1783646766732.html">
+<meta property="og:image" content="https://geovaniguilherme-ops.github.io/tempos-ridiculos/images/inline-1783646756182.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="A pergunta de 1.000.000 de dólares">
+<meta name="twitter:description" content="A pergunta seria: Como a decisão de um povo infantilizado pode ser tão devastadora?">
+<meta name="twitter:image" content="https://geovaniguilherme-ops.github.io/tempos-ridiculos/images/inline-1783646756182.png">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('tr_theme')||'dark');</script>
+</head>
+<body>
+<div class="reading-progress-bar" id="reading-progress"></div>
+<header class="site-header">
+  <a href="../index.html" style="text-decoration:none;color:var(--ink)"><div class="site-title">Tempos Ridículos</div></a>
+</header>
+<div style="max-width:760px;margin:0 auto;padding:1.5rem;">
+  <a href="../index.html" style="font-family:'Space Mono',monospace;font-size:.7rem;color:var(--gold)">← Voltar pro blog</a>
+  <div class="post-full-header" style="margin-top:1rem">
+    <div class="post-category">Cotidiano</div>
+    <h1 class="post-full-title">A pergunta de 1.000.000 de dólares</h1>
+    <div class="post-full-meta"><span>📅 9 de jul. de 2026</span><span>⏱ 1 min</span></div>
+  </div>
+  
+  <div class="post-full-body"><p>Como pode?</p><p><br></p><p><img src="https://geovaniguilherme-ops.github.io/tempos-ridiculos/images/inline-1783646756182.png" width="622" height="341"></p></div>
+  <div class="reactions-bar" id="reactions-bar">
+    <button class="reaction-btn" data-r="like">👍 <span id="r-count-like">0</span></button>
+    <button class="reaction-btn" data-r="laugh">😂 <span id="r-count-laugh">0</span></button>
+    <button class="reaction-btn" data-r="angry">😡 <span id="r-count-angry">0</span></button>
+  </div>
+  <script>
+  (function(){
+    const postId='p1783646766732';
+    const ns='tempos-ridiculos.com';
+    const reactions=['like','laugh','angry'];
+    const reactedKey='tr_react_'+postId;
+    function getReacted(){try{return JSON.parse(localStorage.getItem(reactedKey)||'[]');}catch(e){return[];}}
+    function markReacted(r){const list=getReacted();if(!list.includes(r)){list.push(r);localStorage.setItem(reactedKey,JSON.stringify(list));}}
+    const reacted=getReacted();
+    reactions.forEach(r=>{
+      fetch('https://abacus.jasoncameron.dev/get/'+ns+'/react-'+postId+'-'+r).then(res=>res.ok?res.json():{value:0}).catch(()=>({value:0})).then(d=>{
+        const el=document.getElementById('r-count-'+r);if(el)el.textContent=d.value||0;
+      });
+    });
+    document.querySelectorAll('.reaction-btn').forEach(btn=>{
+      const r=btn.dataset.r;
+      if(reacted.includes(r))btn.classList.add('reaction-done');
+      btn.addEventListener('click',function(){
+        if(reacted.includes(r))return;
+        this.classList.add('reaction-pop','reaction-done');
+        setTimeout(()=>this.classList.remove('reaction-pop'),300);
+        markReacted(r);
+        reacted.push(r);
+        fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/react-'+postId+'-'+r).then(res=>res.json()).then(d=>{
+          const el=document.getElementById('r-count-'+r);if(el)el.textContent=d.value;
+        });
+      });
+    });
+  })();
+  </script>
+  <div class="support-widget">
+    <div class="support-title">💰 O circo não se sustenta sozinho</div>
+    <div class="support-text">O Tempos Ridículos não tem patrocinador nem anúncio chato — vive de quem lê e topa ajudar a manter as crônicas vivas. Qualquer valor faz diferença.</div>
+    <div class="support-pix-box">
+      <div class="support-pix-info"><span class="support-pix-label">PIX (e-mail)</span><span class="support-pix-key">geovani.guilherme@gmail.com</span></div>
+      <button class="support-copy-btn" onclick="navigator.clipboard.writeText('geovani.guilherme@gmail.com').then(()=>{this.textContent='✓ Copiado!';setTimeout(()=>this.textContent='📋 Copiar chave',2000);})">📋 Copiar chave</button>
+    </div>
+  </div>
+  
+  <div class="indig-widget">
+    <div class="indig-question">🌡️ De 1 a 10, o quão "tempos ridículos" é isso?</div>
+    <div class="indig-scale" id="indig-scale"></div>
+    <div class="indig-avg" id="indig-avg"></div>
+  </div>
+  <script>
+  (function(){
+    const postId='p1783646766732';
+    const ns='tempos-ridiculos.com';
+    const votedKey='tr_indig_voted_'+postId;
+    const scale=document.getElementById('indig-scale');
+    const avgEl=document.getElementById('indig-avg');
+    function showAvg(){
+      Promise.all([
+        fetch('https://abacus.jasoncameron.dev/get/'+ns+'/indig-sum-'+postId).then(r=>r.ok?r.json():{value:0}).catch(()=>({value:0})),
+        fetch('https://abacus.jasoncameron.dev/get/'+ns+'/indig-count-'+postId).then(r=>r.ok?r.json():{value:0}).catch(()=>({value:0}))
+      ]).then(([sum,count])=>{
+        const c=count.value||0,s=sum.value||0;
+        const avg=c>0?(s/c).toFixed(1):'—';
+        avgEl.textContent=c>0?('Média geral: '+avg+'/10 ('+c+' '+(c==1?'voto':'votos')+')'):'Seja o primeiro a votar!';
+      });
+    }
+    const saved=votedKey&&localStorage.getItem(votedKey);
+    if(saved){
+      scale.innerHTML='<span class="indig-my-vote">Sua nota: '+saved+'/10</span>';
+      showAvg();
+    } else {
+      let html='';
+      for(let i=1;i<=10;i++)html+='<button class="indig-btn" data-v="'+i+'">'+i+'</button>';
+      scale.innerHTML=html;
+      scale.querySelectorAll('.indig-btn').forEach(btn=>{
+        btn.addEventListener('click',function(){
+          const v=parseInt(this.dataset.v);
+          const sumCalls=[];
+          for(let i=0;i<v;i++)sumCalls.push(fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/indig-sum-'+postId));
+          Promise.all([Promise.all(sumCalls),fetch('https://abacus.jasoncameron.dev/hit/'+ns+'/indig-count-'+postId)]).then(()=>{
+            localStorage.setItem(votedKey,v);
+            scale.innerHTML='<span class="indig-my-vote">Sua nota: '+v+'/10</span>';
+            showAvg();
+          });
+        });
+      });
+      showAvg();
+    }
+  })();
+  </script>
+  <div class="share-bar">
+    <span class="share-label">Compartilhar:</span>
+    <a class="share-btn share-wa" href="https://wa.me/?text=A%20pergunta%20de%201.000.000%20de%20d%C3%B3lares%20https%3A%2F%2Fgeovaniguilherme-ops.github.io%2Ftempos-ridiculos%2Fposts%2Fp1783646766732.html" target="_blank">📱 WhatsApp</a>
+    <a class="share-btn share-tw" href="https://twitter.com/intent/tweet?text=A%20pergunta%20de%201.000.000%20de%20d%C3%B3lares&url=https%3A%2F%2Fgeovaniguilherme-ops.github.io%2Ftempos-ridiculos%2Fposts%2Fp1783646766732.html" target="_blank">𝕏 Twitter</a>
+    <a class="share-btn share-fb" href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgeovaniguilherme-ops.github.io%2Ftempos-ridiculos%2Fposts%2Fp1783646766732.html" target="_blank">📘 Facebook</a>
+    <button class="share-btn share-copy" onclick="navigator.clipboard.writeText('https://geovaniguilherme-ops.github.io/tempos-ridiculos/posts/p1783646766732.html').then(()=>alert('Link copiado!'))">🔗 Copiar link</button>
+  </div>
+  <div class="sidebar-widget" style="margin-top:1.5rem;max-width:340px;margin-left:auto;margin-right:auto;">
+    <div class="widget-content">
+      <img src="../images/promo-geovani.jpg" alt="Geovani Rodrigues" class="promo-widget-photo">
+      <div class="promo-widget-name">Geovani Rodrigues</div>
+      <div class="promo-widget-author">Autor do Tempos Ridículos · Psicanalista Clínico</div>
+      <div class="promo-widget-divider"></div>
+      <div class="promo-widget-headline">Tá tudo bem não estar bem o tempo todo.</div>
+      <div class="promo-widget-text">Sua saúde mental importa. Atendimento online, com sigilo e acolhimento.</div>
+      <a class="promo-widget-btn" href="https://wa.me/5519999612021?text=Oi%2C%20vi%20no%20blog%20e%20queria%20agendar%20uma%20sess%C3%A3o" target="_blank">Agendar uma sessão →</a>
+    </div>
+  </div>
+  <div class="comments-section">
+    <div class="comments-title">Comentários</div>
+    <div class="comment-form">
+      <input type="text" id="cmt-name" placeholder="Seu nome">
+      <textarea id="cmt-text" placeholder="Deixe seu comentário..."></textarea>
+      <button class="btn-comment" id="btn-cmt-submit" onclick="addComment()">Publicar comentário</button>
+    </div>
+    <div id="cmt-list"><p style="color:var(--gray);font-style:italic;font-size:.9rem">Carregando comentários...</p></div>
+  </div>
+</div>
+<footer class="site-footer">
+  <div class="footer-copy">© 2025 Tempos Ridículos · Todos os direitos reservados</div>
+</footer>
+<script>
+const _POST_ID='p1783646766732';
+const _POST_TITLE="A pergunta de 1.000.000 de dólares";
+const _GH_API='https://api.github.com/repos/geovaniguilherme-ops/tempos-ridiculos/issues';
+function _getBotToken(){
+  const p=['github','_pat_','11CCZZFBI0ffD5CKcHGwRY_','bhPZp4ASyZQA1dacXCseklOi1dnoZ1lsXTsvof17rJo2KBL63JZS5ffacyp'];
+  return p.join('');
+}
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function fmtDate2(iso){return new Date(iso).toLocaleDateString('pt-BR',{day:'numeric',month:'short',year:'numeric'});}
+function renderCmts(comments){
+  const list=document.getElementById('cmt-list');
+  if(!comments.length){list.innerHTML='<p style="color:var(--gray);font-style:italic;font-size:.9rem">Nenhum comentário ainda. Seja o primeiro!</p>';return;}
+  list.innerHTML=comments.map(c=>'<div class="comment-item"><div class="comment-author">'+escapeHtml(c.name)+'</div><div class="comment-date">'+fmtDate2(c.date)+'</div><div class="comment-text">'+escapeHtml(c.text)+'</div></div>').join('');
+}
+async function loadCmts(){
+  const t=_getBotToken();if(!t)return;
+  const r=await fetch(_GH_API+'?labels=post-'+_POST_ID+'&state=open&per_page=1',{headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json'}});
+  const issues=await r.json();
+  if(!issues.length){renderCmts([]);return;}
+  const r2=await fetch(_GH_API+'/'+issues[0].number+'/comments?per_page=100',{headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json'}});
+  const cmts=await r2.json();
+  renderCmts(cmts.map(c=>{const m=(c.body||'').match(/^\*\*(.+?)\*\*/);const text=(c.body||'').replace(/^\*\*.+?\*\*\n/,'');return{name:m?m[1]:'Anônimo',text,date:c.created_at};}));
+}
+async function addComment(){
+  const name=document.getElementById('cmt-name').value.trim();
+  const text=document.getElementById('cmt-text').value.trim();
+  if(!text)return;
+  const btn=document.getElementById('btn-cmt-submit');
+  btn.disabled=true;btn.textContent='Publicando...';
+  const t=_getBotToken();
+  if(!t){btn.disabled=false;btn.textContent='Publicar comentário';return;}
+  try{
+    const r=await fetch(_GH_API+'?labels=post-'+_POST_ID+'&state=open&per_page=1',{headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json'}});
+    const issues=await r.json();
+    let issueNum;
+    if(issues.length){issueNum=issues[0].number;}
+    else{
+      const r2=await fetch(_GH_API,{method:'POST',headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+        body:JSON.stringify({title:'Comentários: '+_POST_TITLE,body:'Comentários do post: '+_POST_TITLE,labels:['post-'+_POST_ID]})});
+      issueNum=(await r2.json()).number;
+    }
+    await fetch(_GH_API+'/'+issueNum+'/comments',{method:'POST',headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({body:'**'+(name||'Anônimo')+'**\n'+text})});
+    document.getElementById('cmt-name').value='';document.getElementById('cmt-text').value='';
+    await loadCmts();
+  }catch(e){alert('Erro ao publicar. Tente de novo.');}
+  finally{btn.disabled=false;btn.textContent='Publicar comentário';}
+}
+loadCmts();
+function updateReadingProgress(){
+  const h=document.documentElement;
+  const scrolled=h.scrollTop;
+  const max=h.scrollHeight-h.clientHeight;
+  const pct=max>0?(scrolled/max)*100:0;
+  const bar=document.getElementById('reading-progress');
+  if(bar)bar.style.width=pct+'%';
+}
+window.addEventListener('scroll',updateReadingProgress);
+updateReadingProgress();
+(function(){
+  const isOwnerVisit=(()=>{try{return localStorage.getItem('tr_owner')==='1';}catch(e){return false;}})();
+  fetch(`https://abacus.jasoncameron.dev/${isOwnerVisit?'get':'hit'}/tempos-ridiculos.com/views2-p1783646766732`).catch(()=>{});
+})();
+</script>
+</body>
+</html>
